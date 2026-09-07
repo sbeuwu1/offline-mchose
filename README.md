@@ -1,10 +1,16 @@
+<div align="center">
+
+<img src="assets/logo.png" alt="Offline Mchose Logo" width="160" />
+
 # Offline Mchose
 
 [![Build and Release](https://github.com/Rapou7/mchose-drivers-offline/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/Rapou7/mchose-drivers-offline/actions/workflows/build-and-release.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-blue.svg)](https://www.microsoft.com/windows)
 
-A lightweight, native Windows offline driver and hardware configurator for MCHOSE gaming mice.
+**A lightweight, native Windows offline driver and hardware configurator for MCHOSE gaming mice.**
+
+</div>
 
 > [!IMPORTANT]
 > **LEGAL & NON-AFFILIATION DISCLAIMER:**  
@@ -62,12 +68,6 @@ Download the latest `MchoseHub-Setup-v*.exe` from the [Releases](https://github.
 
 ### Option 2: Portable Executable
 Download `MchoseHub-Portable-v*.exe` from [Releases](https://github.com/Rapou7/mchose-drivers-offline/releases). Single-file executable that requires no installation.
-
-### Option 3: Offline WebHID Configurator
-If you prefer running via a Chromium-based browser (Chrome, Edge, Brave, Opera):
-1. Open the [`web/`](web/) folder.
-2. Launch `run_offline_driver.bat` and open `http://localhost:8080/`.
-3. Click **"Connect Mouse"** to pair via WebHID.
 
 ---
 

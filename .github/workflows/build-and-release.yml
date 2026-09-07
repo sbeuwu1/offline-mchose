@@ -1,9 +1,16 @@
-name: Build and Release Offline Mchose
+name: Build and Release
 
 on:
   push:
+    branches:
+      - master
+      - main
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - master
+      - main
   workflow_dispatch:
     inputs:
       version:
@@ -16,7 +23,7 @@ permissions:
 
 jobs:
   build:
-    name: Build Native Executable & Installer
+    name: Build Portable & Installer
     runs-on: windows-latest
 
     steps:
@@ -44,7 +51,7 @@ jobs:
           "version_tag=$rawVer" >> $env:GITHUB_OUTPUT
           "version_number=$verNumber" >> $env:GITHUB_OUTPUT
 
-      - name: Publish Self-Contained Single-File Executable
+      - name: Publish Portable Executable
         shell: pwsh
         run: |
           $ver = "${{ steps.get_version.outputs.version_number }}"
@@ -61,8 +68,8 @@ jobs:
       - name: Stage Portable Binary
         shell: pwsh
         run: |
-          $tag = "${{ steps.get_version.outputs.version_tag }}"
-          Copy-Item "publish/portable/MchoseHub.exe" -Destination "publish/portable/MchoseHub-Portable-$tag.exe"
+          $ver = "${{ steps.get_version.outputs.version_number }}"
+          Copy-Item "publish/portable/MchoseHub.exe" -Destination "publish/portable/OfflineMchose-Portable-v$ver.exe"
 
       - name: Install Inno Setup
         shell: pwsh
@@ -75,7 +82,16 @@ jobs:
           $ver = "${{ steps.get_version.outputs.version_number }}"
           & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" installer/mchose_setup.iss "/DMyAppVersion=$ver"
 
-      - name: Create Release and Upload Artifacts
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Offline-Mchose-Binaries-${{ steps.get_version.outputs.version_tag }}
+          path: |
+            publish/portable/OfflineMchose-Portable-*.exe
+            publish/installer/MchoseHub-Setup-*.exe
+          if-no-files-found: error
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
@@ -85,5 +101,5 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: |
-            publish/portable/MchoseHub-Portable-*.exe
+            publish/portable/OfflineMchose-Portable-*.exe
             publish/installer/MchoseHub-Setup-*.exe

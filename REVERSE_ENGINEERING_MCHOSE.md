@@ -201,17 +201,13 @@ Mouse response payload bytes:
 
 ---
 
-## 4. How to Use the Included Offline Configurator
+## 4. Offline Mchose Native Application
 
-We have created an offline web tool: [`mchose_offline_hub.html`](file:///c:/Users/silvu/Documents/mchose%20drivers%20offline/mchose_offline_hub.html).
+The native Windows desktop application implements this full reverse-engineered protocol without any external web services or telemetry:
 
-### Steps:
-1. Double-click [`run_offline_driver.bat`](file:///c:/Users/silvu/Documents/mchose%20drivers%20offline/run_offline_driver.bat).
-2. It starts a lightweight local server at `http://localhost:8080/` and opens your browser (Chrome, Brave, Edge, or Opera).
-3. Click **"Connect Mouse"**.
-4. In the browser popup, select your **MCHOSE Dongle or Mouse** and click **Connect**.
-5. You can now:
-   - Click any Polling Rate button (**125Hz, 500Hz, 1000Hz, 2000Hz, 4000Hz, 8000Hz**) and click **Apply**.
-   - Select your active DPI stage or adjust the DPI sliders.
-   - Adjust LOD (0.7mm, 1mm, 2mm) or Key Debounce time.
-   - View every raw packet in the live **HID Packet Monitor**.
+### Features:
+- **Direct USB HID Communication:** Sends inverted report packets directly to device endpoints via Windows raw HID.
+- **Hardware Profile Persistence:** Settings are committed to onboard flash memory.
+- **Diagnostics & Testing:** Live hardware polling rate tester, latency measuring, and HID monitor.
+
+Run `MchoseHub.exe` directly or build from source using the steps in [README.md](README.md).
