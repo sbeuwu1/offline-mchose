@@ -1,0 +1,200 @@
+<Window x:Class="MchoseHub.TesterWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:MchoseHub"
+        Title="Hardware Tester"
+        WindowStyle="None"
+        WindowState="Maximized"
+        Topmost="True"
+        ResizeMode="NoResize"
+        Background="#0A0614"
+        Icon="Assets/app_icon.ico"
+        Cursor="Cross"
+        KeyDown="Window_KeyDown"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
+
+    <Grid>
+        <!-- Motion Dot Trail — 100% GPU DirectX accelerated zero-copy trail -->
+        <local:TrailCanvas x:Name="trailCanvas" IsHitTestVisible="False"
+                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+        <!-- Top Header Navigation -->
+        <Border VerticalAlignment="Top" Background="#0F081F" BorderBrush="#2E1A5E" BorderThickness="0,0,0,1" Padding="24,14" Height="64">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Hardware Tester" FontWeight="Bold" FontSize="16" Foreground="#F1F5F9" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Center: Simple Instruction -->
+                <Border Grid.Column="1" HorizontalAlignment="Center" Background="#170E2F" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="20" Padding="18,6">
+                    <TextBlock Text="Move mouse to test polling rate • Click buttons to test switch interval • Press [ESC] to exit"
+                               FontSize="11" Foreground="#94A3B8"/>
+                </Border>
+
+                <!-- Right: Action Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Reset [R]" Click="BtnReset_Click" Background="#2E1A5E" Foreground="#C084FC" FontWeight="Bold"
+                            BorderThickness="0" Padding="16,8" Cursor="Hand" Margin="0,0,12,0">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="8"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                    <Button Content="Exit [ESC]" Click="BtnExit_Click" Background="#7C3AED" Foreground="#FFFFFF" FontWeight="Bold"
+                            BorderThickness="0" Padding="18,8" Cursor="Hand">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="8"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Center Screen: Polling Rate Readout -->
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Margin="0,0,0,40">
+            <!-- Rate Tier Badge -->
+            <Border x:Name="rateTierBadge" HorizontalAlignment="Center" Background="#170E2F" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="12" Padding="18,6" Margin="0,0,0,16">
+                <TextBlock x:Name="txtRateTier" Text="MOVE MOUSE TO TEST" FontWeight="Bold" FontSize="13" Foreground="#C084FC"/>
+            </Border>
+
+            <!-- Huge Current Hz (Pure DirectWrite GPU rendering, zero software blur) -->
+            <TextBlock x:Name="txtCurrentHz" Text="0 Hz" FontSize="120" FontWeight="Black" FontFamily="Consolas, monospace"
+                       HorizontalAlignment="Center" Foreground="#C084FC" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Current Polling Rate" FontSize="12" FontWeight="SemiBold"
+                       Foreground="#64748B" HorizontalAlignment="Center" Margin="0,0,0,32"/>
+
+            <!-- Metric Cards (Peak, Average, Total Packets) -->
+            <Grid Width="720">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Peak Card -->
+                <Border Grid.Column="0" Background="#170E2F" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="14" Padding="20,16">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="PEAK HZ" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="txtPeakHz" Text="0 Hz" FontSize="36" FontWeight="Black" FontFamily="Consolas, monospace" Foreground="#10B981" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Average Card -->
+                <Border Grid.Column="2" Background="#170E2F" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="14" Padding="20,16">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="AVERAGE HZ" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="txtAvgHz" Text="0 Hz" FontSize="36" FontWeight="Black" FontFamily="Consolas, monospace" Foreground="#A855F7" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Status Card -->
+                <Border Grid.Column="4" Background="#170E2F" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="14" Padding="20,16">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="STATUS" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="txtTargetStatus" Text="IDLE" FontSize="26" FontWeight="Black" FontFamily="Consolas, monospace" Foreground="#38BDF8" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+
+        <!-- Corner HUD: Switch Latency & Chatter (Bottom-Right) -->
+        <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,32,32" Width="440"
+                Background="#170E2F" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="16" Padding="20">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" BlurRadius="24" ShadowDepth="4" Opacity="0.5"/>
+            </Border.Effect>
+            <StackPanel>
+                <!-- Title & Reset -->
+                <Grid Margin="0,0,0,14">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Switch Latency &amp; Chatter" FontWeight="Bold" FontSize="15" Foreground="#F1F5F9"/>
+                        <TextBlock Text="Click interval and double-click detector" FontSize="11" Foreground="#64748B"/>
+                    </StackPanel>
+                    <Button Content="Reset Clicks" Click="BtnResetClicks_Click" Background="#2E1A5E" Foreground="#C084FC" BorderThickness="0"
+                            FontSize="11" Padding="12,5" HorizontalAlignment="Right" Cursor="Hand">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="6"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </Grid>
+
+                <!-- Physical Button Live Indicators -->
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="6"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="6"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="6"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="6"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border x:Name="pillLeft" Grid.Column="0" Background="#120B24" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="6" Padding="4,6">
+                        <TextBlock Text="LEFT" FontWeight="Bold" FontSize="10" Foreground="#64748B" HorizontalAlignment="Center"/>
+                    </Border>
+                    <Border x:Name="pillMiddle" Grid.Column="2" Background="#120B24" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="6" Padding="4,6">
+                        <TextBlock Text="MID" FontWeight="Bold" FontSize="10" Foreground="#64748B" HorizontalAlignment="Center"/>
+                    </Border>
+                    <Border x:Name="pillRight" Grid.Column="4" Background="#120B24" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="6" Padding="4,6">
+                        <TextBlock Text="RIGHT" FontWeight="Bold" FontSize="10" Foreground="#64748B" HorizontalAlignment="Center"/>
+                    </Border>
+                    <Border x:Name="pillSide1" Grid.Column="6" Background="#120B24" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="6" Padding="4,6">
+                        <TextBlock Text="SIDE 1" FontWeight="Bold" FontSize="10" Foreground="#64748B" HorizontalAlignment="Center"/>
+                    </Border>
+                    <Border x:Name="pillSide2" Grid.Column="8" Background="#120B24" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="6" Padding="4,6">
+                        <TextBlock Text="SIDE 2" FontWeight="Bold" FontSize="10" Foreground="#64748B" HorizontalAlignment="Center"/>
+                    </Border>
+                </Grid>
+
+                <!-- Readout Stats -->
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="CLICKS" FontSize="10" FontWeight="Bold" Foreground="#64748B"/>
+                        <TextBlock x:Name="txtClickCount" Text="0" FontSize="24" FontWeight="Black" FontFamily="Consolas, monospace" Foreground="#F1F5F9"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                        <TextBlock Text="INTERVAL" FontSize="10" FontWeight="Bold" Foreground="#64748B"/>
+                        <TextBlock x:Name="txtLastInterval" Text="-- ms" FontSize="24" FontWeight="Black" FontFamily="Consolas, monospace" Foreground="#C084FC"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                        <TextBlock Text="DOUBLE CLICKS" FontSize="10" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Right"/>
+                        <TextBlock x:Name="txtDoubleClickCount" Text="0" FontSize="24" FontWeight="Black" FontFamily="Consolas, monospace" Foreground="#EF4444" HorizontalAlignment="Right"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Real-time Status Banner -->
+                <Border x:Name="statusBanner" Background="#120B24" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="8" Padding="12,8">
+                    <TextBlock x:Name="txtClickFeedback" Text="Ready to test clicks" FontSize="12" FontWeight="SemiBold"
+                               Foreground="#94A3B8" HorizontalAlignment="Center" TextAlignment="Center"/>
+                </Border>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

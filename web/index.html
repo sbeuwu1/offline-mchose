@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCHOSE Offline Device Hub — A7 V2 Ultra / Pro Configurator</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(22, 30, 46, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-hover: rgba(0, 229, 255, 0.4);
+      --accent: #00e5ff;
+      --accent-glow: rgba(0, 229, 255, 0.35);
+      --primary: #3b82f6;
+      --purple: #a855f7;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --surface: #131b2e;
+      --surface-light: #1e293b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(0, 229, 255, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.6) 0px, transparent 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+    }
+
+    header {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      color: #000;
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: 1px;
+      padding: 6px 12px;
+      border-radius: 8px;
+    }
+
+    .title-group h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .title-group p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 8px var(--danger);
+    }
+
+    .status-dot.online {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .btn {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #0284c7);
+      color: #000;
+      border: none;
+      font-weight: 700;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      box-shadow: 0 0 16px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+
+    main {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 22px;
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .badge-info {
+      background: rgba(0, 229, 255, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    /* Performance Mode Grid */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .mode-btn {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 14px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mode-btn .mode-name {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .mode-btn .mode-tag {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .mode-btn:hover:not(.active) {
+      border-color: var(--card-border-hover);
+      background: var(--surface-light);
+    }
+
+    .mode-btn.active {
+      background: rgba(0, 229, 255, 0.12);
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
+    }
+
+    .mode-description {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--surface);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border-left: 3px solid var(--accent);
+    }
+
+    /* Polling Rate Grid */
+    .rate-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .rate-btn {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 14px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .rate-btn .rate-val {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    .rate-btn .rate-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .rate-btn:hover:not(.active) {
+      border-color: var(--card-border-hover);
+      background: var(--surface-light);
+    }
+
+    .rate-btn.active {
+      background: rgba(0, 229, 255, 0.12);
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
+    }
+
+    /* Level Selector */
+    .level-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .level-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .level-btn.active {
+      background: rgba(168, 85, 247, 0.2);
+      border-color: var(--purple);
+      color: #fff;
+    }
+
+    /* DPI Stages */
+    .dpi-stages {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .dpi-stage-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      padding: 8px 14px;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .dpi-stage-row.active {
+      border-color: var(--purple);
+      background: rgba(168, 85, 247, 0.12);
+    }
+
+    .stage-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .stage-radio {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--purple);
+    }
+
+    .stage-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      min-width: 55px;
+    }
+
+    .dpi-slider {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .dpi-num-input {
+      width: 80px;
+      background: var(--surface-light);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 6px 8px;
+      color: var(--text);
+      font-family: monospace;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .dpi-num-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Sensor & Hardware Settings */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .setting-row:last-child { border-bottom: none; }
+
+    .setting-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-width: 70%;
+    }
+
+    .setting-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .setting-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .segmented-control {
+      display: flex;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .seg-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .seg-btn.active {
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+    }
+
+    /* Toggle Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--surface-light);
+      border: 1px solid var(--card-border);
+      transition: .2s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--text-muted);
+      transition: .2s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+      background-color: #000;
+    }
+
+    /* Log Monitor */
+    .log-box {
+      background: #060911;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      height: 160px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .log-entry.info { color: #38bdf8; }
+    .log-entry.tx { color: #a855f7; }
+    .log-entry.rx { color: #10b981; }
+    .log-entry.err { color: #f87171; }
+    .log-entry.warn { color: #fbbf24; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="logo-badge">MCHOSE</div>
+      <div class="title-group">
+        <h1>A7 V2 Ultra / Pro Offline Hub</h1>
+        <p>Direct WebHID Hardware Control • Zero Server Reliance</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="status-pill">
+        <div id="statusDot" class="status-dot"></div>
+        <span id="statusText">Disconnected</span>
+        <span id="batteryBadge" style="display: none; margin-left: 6px; font-weight: 700; color: var(--accent);"></span>
+      </div>
+      <button id="connectBtn" class="btn btn-primary" onclick="connectDevice()">
+        Connect Mouse
+      </button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Connected Device Hero Card -->
+    <div class="card" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 20px 24px; background: linear-gradient(135deg, rgba(22, 30, 46, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1px solid rgba(0, 229, 255, 0.15);">
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <div style="width: 75px; height: 100px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.25); border-radius: 12px; border: 1px solid var(--card-border); padding: 6px;">
+          <img src="/mhub_files/A7V2Pro_black.png" alt="MCHOSE Mouse" style="max-height: 100%; max-width: 100%; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0, 229, 255, 0.25));">
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap;">
+            <h2 id="heroDeviceName" style="font-size: 18px; font-weight: 700; letter-spacing: -0.3px;">MCHOSE A7 V2 Ultra / Pro</h2>
+            <span id="heroVidPid" class="badge-info" style="font-family: monospace; font-size: 11px;">VID: 0x3837 • PID: 0x100B</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <span><strong style="color: var(--text);">Sensor:</strong> PixArt PAW3950 Ultra</span>
+            <span><strong style="color: var(--text);">Max Polling:</strong> 8,000 Hz</span>
+            <span><strong style="color: var(--text);">Max DPI:</strong> 42,000 DPI</span>
+            <span><strong style="color: var(--text);">Connection:</strong> Direct WebHID (Offline)</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <div style="text-align: right;">
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">BATTERY STATUS</div>
+          <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-end;">
+            <span id="heroBatteryText" style="font-size: 20px; font-weight: 800; font-family: monospace; color: var(--accent);">--%</span>
+            <div style="width: 34px; height: 18px; border: 1.5px solid var(--card-border-hover); border-radius: 4px; padding: 1.5px; position: relative; display: flex; align-items: center;">
+              <div id="heroBatteryFill" style="height: 100%; width: 0%; background: var(--accent); border-radius: 2px; transition: width 0.3s ease;"></div>
+              <div style="position: absolute; right: -4px; top: 4px; width: 2px; height: 7px; background: var(--card-border-hover); border-radius: 0 1px 1px 0;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Mode Selection Card -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Performance Mode</div>
+          <div class="card-subtitle">Select sensor power curve and responsiveness</div>
+        </div>
+        <span id="activeModeBadge" class="badge-info">Gaming Mode</span>
+      </div>
+
+      <div class="mode-grid">
+        <button class="mode-btn" id="modeBtn1" onclick="setMode(1)">
+          <span class="mode-name">Performance</span>
+          <span class="mode-tag">Eco / Balanced</span>
+        </button>
+        <button class="mode-btn active" id="modeBtn2" onclick="setMode(2)">
+          <span class="mode-name">Gaming Mode</span>
+          <span class="mode-tag">Recommended</span>
+        </button>
+        <button class="mode-btn" id="modeBtn3" onclick="setMode(3)">
+          <span class="mode-name">Extreme Mode</span>
+          <span class="mode-tag">Max Response</span>
+        </button>
+      </div>
+
+      <div class="mode-description" id="modeDescText">
+        Great for fast-paced gaming: quicker response, smoother feel, slightly more power use.
+      </div>
+    </div>
+
+    <!-- Polling Rate Card -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Polling Rate (Hz)</div>
+          <div class="card-subtitle">Click to immediately write rate to mouse onboard memory</div>
+        </div>
+        <span id="activeHzBadge" class="badge-info">2000 Hz</span>
+      </div>
+
+      <div class="rate-grid">
+        <button class="rate-btn" data-rate="0" onclick="applyRate(0)">
+          <span class="rate-val">125</span>
+          <span class="rate-label">Hz</span>
+        </button>
+        <button class="rate-btn" data-rate="1" onclick="applyRate(1)">
+          <span class="rate-val">500</span>
+          <span class="rate-label">Hz</span>
+        </button>
+        <button class="rate-btn" data-rate="2" onclick="applyRate(2)">
+          <span class="rate-val">1000</span>
+          <span class="rate-label">Hz (1K)</span>
+        </button>
+        <button class="rate-btn active" data-rate="3" onclick="applyRate(3)">
+          <span class="rate-val">2000</span>
+          <span class="rate-label">Hz (2K)</span>
+        </button>
+        <button class="rate-btn" data-rate="4" onclick="applyRate(4)">
+          <span class="rate-val">4000</span>
+          <span class="rate-label">Hz (4K)</span>
+        </button>
+        <button class="rate-btn" data-rate="5" onclick="applyRate(5)">
+          <span class="rate-val">8000</span>
+          <span class="rate-label">Hz (8K Ultra)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- DPI Settings Card -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">DPI Stages & Sensitivity</div>
+          <div class="card-subtitle">Configure 1–6 stages (50 to 42,000 DPI)</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="level-selector" id="levelCountContainer">
+            <span style="font-size: 11px; color: var(--text-muted);">Levels:</span>
+            <button class="level-btn" onclick="setLevelCount(1)">1</button>
+            <button class="level-btn" onclick="setLevelCount(2)">2</button>
+            <button class="level-btn" onclick="setLevelCount(3)">3</button>
+            <button class="level-btn" onclick="setLevelCount(4)">4</button>
+            <button class="level-btn active" onclick="setLevelCount(5)">5</button>
+            <button class="level-btn" onclick="setLevelCount(6)">6</button>
+          </div>
+          <span id="activeDpiBadge" class="badge-info">Stage 1: 800 DPI</span>
+        </div>
+      </div>
+
+      <div class="dpi-stages" id="dpiContainer">
+        <!-- Generated by JS -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button id="applyDpiBtn" class="btn btn-primary" onclick="applyDpi()" disabled>
+          Save DPI to Mouse
+        </button>
+      </div>
+    </div>
+
+    <!-- Sensor & Motion Tuning Card -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Sensor & Tracking Tuning</div>
+          <div class="card-subtitle">LOD, Motion Sync, Ripple Control, and Angle Snapping</div>
+        </div>
+      </div>
+
+      <!-- LOD -->
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-title">Lift-Off Distance (LOD)</span>
+          <span class="setting-desc">Sensor cutoff height</span>
+        </div>
+        <div class="segmented-control">
+          <button class="seg-btn" id="lod0" onclick="setLod(0)">0.7 mm</button>
+          <button class="seg-btn active" id="lod1" onclick="setLod(1)">1.0 mm</button>
+          <button class="seg-btn" id="lod2" onclick="setLod(2)">2.0 mm</button>
+        </div>
+      </div>
+
+      <!-- Motion Sync -->
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-title">Motion Sync</span>
+          <span class="setting-desc">Synchronizes sensor refresh with USB polling cycle</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="motionSyncToggle" onchange="toggleSensorFeature('motionSync', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Ripple Control -->
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-title">Ripple Control</span>
+          <span class="setting-desc">Jitter elimination algorithm at high speeds</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="rippleToggle" onchange="toggleSensorFeature('ripple', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Angle Snapping -->
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-title">Angle Snapping</span>
+          <span class="setting-desc">Linear horizontal and vertical path correction</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="angleSnapToggle" onchange="toggleSensorFeature('angleSnap', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Sensor Angle (Rotate) -->
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-title">Rotate (Sensor Angle)</span>
+          <span class="setting-desc">Compensates for tilted mouse grip angle (-30° to +30°)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="range" id="rotateSlider" min="-30" max="30" value="0" style="accent-color: var(--accent); width: 110px;" oninput="updateRotate(this.value); applyRotate(this.value)" onchange="applyRotate(this.value)">
+          <span id="rotateVal" style="font-weight: 700; width: 45px; font-family: monospace;">0°</span>
+          <button class="btn btn-secondary" onclick="resetRotate()" title="Reset to 0°" style="padding: 2px 8px; font-size: 11px; height: 26px; line-height: 1;">0°</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timers & Debounce Card (Full Width) -->
+    <div class="card" style="grid-column: 1 / -1;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Debounce & Power Management</div>
+          <div class="card-subtitle">Button debounce timing and wireless auto-sleep</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+        <!-- Debounce -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-title">Key Debounce Time (ms)</span>
+            <span class="setting-desc">Lower values increase click response; higher prevents double-clicks</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="range" id="debounceSlider" min="1" max="20" value="8" style="accent-color: var(--accent);" oninput="document.getElementById('debounceVal').textContent = this.value + 'ms'" onchange="applyDebounce(this.value)">
+            <span id="debounceVal" style="font-weight: 700; width: 45px; font-family: monospace;">8ms</span>
+          </div>
+        </div>
+
+        <!-- Sleep Timer -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-title">Sleep Timer (Min)</span>
+            <span class="setting-desc">Auto-sleep delay in 2.4G wireless mode</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="sleepSlider" min="1" max="60" value="3" style="accent-color: var(--accent);" oninput="document.getElementById('sleepVal').textContent = this.value + 'm'" onchange="applySleep(this.value)">
+            <span id="sleepVal" style="font-weight: 700; width: 40px; font-family: monospace;">3m</span>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
+              <input type="checkbox" id="neverSleepCheckbox" onchange="toggleNeverSleep(this.checked)">
+              Never
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Packet Monitor Card (Full Width) -->
+    <div class="card" style="grid-column: 1 / -1;">
+      <div class="card-header">
+        <div class="card-title">Live Hardware Packet Monitor</div>
+        <button class="btn" style="padding: 4px 10px; font-size: 11px;" onclick="clearLog()">Clear Log</button>
+      </div>
+      <div id="logBox" class="log-box">
+        <div class="log-entry info">[Init] Ready. Connect via Chromium browser (Chrome, Brave, Edge). Zero internet needed.</div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const POLLING_RATES = [125, 500, 1000, 2000, 4000, 8000];
+    const STAGE_COLORS = ['#ff250e', '#0066ff', '#00cc66', '#ffcc00', '#00cccc', '#e040fb'];
+    const MODE_DESCRIPTIONS = {
+      1: "Eco / Balanced: Standard sensor refresh curve, extends battery life for productivity.",
+      2: "Great for fast-paced gaming: quicker response, smoother feel, slightly more power use.",
+      3: "Extreme Mode: Maximum sensor responsiveness, tightest frame timing, competitive focus."
+    };
+
+    let activeDevice = null;
+
+    let mouseState = {
+      gameMode: 2, // 1: Performance, 2: Gaming, 3: Extreme
+      rateIndex: 3, // 2000 Hz
+      lodIndex: 1, // 1.0mm
+      ripple: false,
+      angleSnap: false,
+      motionSync: false,
+      rotateVal: 0,
+      debounce: 8,
+      sleep: 3,
+      neverSleep: false,
+      numLevels: 5,
+      activeDpiIndex: 0,
+      dpiStages: [800, 800, 1600, 3200, 6400, 12800]
+    };
+
+    // Logging
+    function log(msg, type = 'info') {
+      const box = document.getElementById('logBox');
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.className = `log-entry ${type}`;
+      div.textContent = `[${time}] ${msg}`;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+    function clearLog() { document.getElementById('logBox').innerHTML = ''; }
+
+    // --- UI Rendering ---
+    function renderDpiStages() {
+      const container = document.getElementById('dpiContainer');
+      container.innerHTML = '';
+
+      for (let idx = 0; idx < mouseState.numLevels; idx++) {
+        const val = mouseState.dpiStages[idx] || 800;
+        const color = STAGE_COLORS[idx % STAGE_COLORS.length];
+        const row = document.createElement('div');
+        row.className = `dpi-stage-row ${idx === mouseState.activeDpiIndex ? 'active' : ''}`;
+        row.id = `dpiRow${idx}`;
+
+        row.innerHTML = `
+          <input type="radio" name="dpiStageRadio" class="stage-radio" ${idx === mouseState.activeDpiIndex ? 'checked' : ''} onchange="selectDpiStage(${idx})">
+          <span class="stage-dot" style="background: ${color}; box-shadow: 0 0 8px ${color};"></span>
+          <span class="stage-badge">Stage ${idx + 1}</span>
+          <input type="range" class="dpi-slider" min="50" max="42000" step="50" value="${val}" oninput="updateDpiSlider(${idx}, this.value)">
+          <input type="number" class="dpi-num-input" min="50" max="42000" step="50" value="${val}" onchange="updateDpiInput(${idx}, this.value)">
+        `;
+        container.appendChild(row);
+      }
+      updateBadges();
+    }
+
+    function setLevelCount(count) {
+      mouseState.numLevels = count;
+      if (mouseState.activeDpiIndex >= count) {
+        mouseState.activeDpiIndex = count - 1;
+      }
+      document.querySelectorAll('.level-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i + 1 === count);
+      });
+      renderDpiStages();
+      scheduleApplyDpi();
+    }
+
+    function updateDpiSlider(idx, val) {
+      mouseState.dpiStages[idx] = parseInt(val);
+      const row = document.getElementById(`dpiRow${idx}`);
+      row.querySelector('.dpi-num-input').value = val;
+      updateBadges();
+    }
+
+    function updateDpiInput(idx, val) {
+      let num = Math.max(50, Math.min(42000, parseInt(val) || 800));
+      mouseState.dpiStages[idx] = num;
+      const row = document.getElementById(`dpiRow${idx}`);
+      row.querySelector('.dpi-slider').value = num;
+      row.querySelector('.dpi-num-input').value = num;
+      updateBadges();
+    }
+
+    function selectDpiStage(idx) {
+      mouseState.activeDpiIndex = idx;
+      document.querySelectorAll('.dpi-stage-row').forEach((r, i) => {
+        r.classList.toggle('active', i === idx);
+      });
+      updateBadges();
+      scheduleApplyDpi();
+    }
+
+    function selectRateUI(idx) {
+      mouseState.rateIndex = idx;
+      document.querySelectorAll('.rate-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.rate) === idx);
+      });
+      updateBadges();
+    }
+
+    function setModeUI(mode) {
+      mouseState.gameMode = mode;
+      [1, 2, 3].forEach(m => {
+        document.getElementById(`modeBtn${m}`).classList.toggle('active', m === mode);
+      });
+      const names = { 1: 'Performance', 2: 'Gaming Mode', 3: 'Extreme Mode' };
+      document.getElementById('activeModeBadge').textContent = names[mode];
+      document.getElementById('modeDescText').textContent = MODE_DESCRIPTIONS[mode];
+    }
+
+    function setLodUI(idx) {
+      mouseState.lodIndex = idx;
+      [0, 1, 2].forEach(i => {
+        document.getElementById(`lod${i}`).classList.toggle('active', i === idx);
+      });
+    }
+
+    function updateRotate(val) {
+      mouseState.rotateVal = parseInt(val);
+      document.getElementById('rotateVal').textContent = `${val}°`;
+    }
+
+    function resetRotate() {
+      document.getElementById('rotateSlider').value = 0;
+      updateRotate(0);
+      applyRotate(0);
+    }
+
+    function updateBadges() {
+      const hz = POLLING_RATES[mouseState.rateIndex] || 2000;
+      document.getElementById('activeHzBadge').textContent = `${hz} Hz`;
+
+      const activeDpiVal = mouseState.dpiStages[mouseState.activeDpiIndex] || 800;
+      document.getElementById('activeDpiBadge').textContent = `Stage ${mouseState.activeDpiIndex + 1}: ${activeDpiVal} DPI`;
+    }
+
+    // --- WebHID Communication ---
+    function isClassicDevice(dev) {
+      if (!dev) return true;
+      for (const c of dev.collections || []) {
+        if (c.featureReports && c.featureReports.some(r => r.reportId === 17 || r.reportId === 18)) {
+          return true;
+        }
+      }
+      const classicPids = [0x100B, 0x4019, 0x100A, 0x100C, 0x4021, 0x4008, 0x1020, 0x4018, 0x1005];
+      if (classicPids.includes(dev.productId)) return true;
+      const hasOutput77 = (dev.collections || []).some(c => c.outputReports && c.outputReports.some(r => r.reportId === 77));
+      return !hasOutput77;
+    }
+
+    async function connectDevice() {
+      if (!('hid' in navigator)) {
+        alert('WebHID is not supported by your browser. Please use Chrome, Brave, Edge, or Opera!');
+        return;
+      }
+
+      try {
+        log('Requesting MCHOSE mouse device...');
+        const filters = [
+          { vendorId: 14391, usagePage: 65281 },
+          { vendorId: 14391, usagePage: 65291 },
+          { vendorId: 21075, usagePage: 65281 },
+          { vendorId: 21075, usagePage: 65291 }
+        ];
+
+        const devices = await navigator.hid.requestDevice({ filters });
+        if (!devices.length) {
+          log('No device selected.', 'err');
+          return;
+        }
+
+        const dev = devices[0];
+        if (!dev.opened) {
+          await dev.open();
+        }
+
+        activeDevice = dev;
+        dev.addEventListener('inputreport', handleInputReport);
+
+        const isClassic = isClassicDevice(dev);
+        log(`Connected to: ${dev.productName || 'MCHOSE Device'} (VID: 0x${dev.vendorId.toString(16).toUpperCase()}, PID: 0x${dev.productId.toString(16).toUpperCase()})`, 'info');
+        log(`Protocol: ${isClassic ? 'Classic Protocol (Feature Reports 0x11 / 0x12)' : 'Protocol V2 (Output Report 77)'}`, 'info');
+
+        document.getElementById('statusDot').className = 'status-dot online';
+        document.getElementById('statusText').textContent = dev.productName || 'MCHOSE Connected';
+        document.getElementById('connectBtn').textContent = 'Reconnect';
+        document.getElementById('applyDpiBtn').disabled = false;
+
+        const heroDev = document.getElementById('heroDeviceName');
+        if (heroDev) heroDev.textContent = dev.productName || 'MCHOSE A7 V2 Ultra / Pro';
+        const heroVidPid = document.getElementById('heroVidPid');
+        if (heroVidPid) heroVidPid.textContent = `VID: 0x${dev.vendorId.toString(16).toUpperCase()} • PID: 0x${dev.productId.toString(16).toUpperCase()}`;
+
+        // Query initial state
+        await readDeviceState();
+
+      } catch (err) {
+        log(`Connection failed: ${err.message}`, 'err');
+      }
+    }
+
+    // --- Serialized Command Queue with Coalescing & Inter-Packet Guard Delay ---
+    // Prevents USB/RF buffer congestion and Flash write stalls that cause cursor freezes
+    const commandQueue = [];
+    let isProcessingQueue = false;
+
+    function enqueueCommand(taskFn, tag = '') {
+      return new Promise((resolve, reject) => {
+        // Coalesce: if a command with the same tag is already pending in the queue, replace it
+        if (tag) {
+          const existingIdx = commandQueue.findIndex(item => item.tag === tag);
+          if (existingIdx !== -1) {
+            commandQueue[existingIdx].resolve(); // resolve superseded task
+            commandQueue.splice(existingIdx, 1);
+          }
+        }
+        commandQueue.push({ fn: taskFn, tag, resolve, reject });
+        processCommandQueue();
+      });
+    }
+
+    async function processCommandQueue() {
+      if (isProcessingQueue || commandQueue.length === 0) return;
+      isProcessingQueue = true;
+
+      const statusText = document.getElementById('statusText');
+
+      while (commandQueue.length > 0) {
+        const item = commandQueue.shift();
+        if (statusText && activeDevice && !item.tag.startsWith('read')) {
+          statusText.textContent = 'Syncing...';
+        }
+
+        try {
+          const res = await item.fn();
+          item.resolve(res);
+        } catch (err) {
+          item.reject(err);
+        }
+
+        // Guard delay: 75ms allows the MCU flash erase/write to complete and the 2.4G RF
+        // pipeline to continue processing mouse movement packets without cursor stutter
+        await new Promise(r => setTimeout(r, 75));
+      }
+
+      if (statusText && activeDevice) {
+        statusText.textContent = activeDevice.productName || 'MCHOSE Connected';
+      }
+      isProcessingQueue = false;
+    }
+
+    async function sendClassicFeature(reportId, rawBytes, totalLength, tag = '') {
+      if (!activeDevice || !activeDevice.opened) throw new Error('Device not connected');
+      return enqueueCommand(async () => {
+        const inverted = rawBytes.map(b => b ^ 0xFF);
+        const buf = new Uint8Array(totalLength);
+        buf.fill(0xFF);
+        for (let i = 0; i < inverted.length; i++) {
+          buf[i] = inverted[i];
+        }
+        const hex = Array.from(buf.slice(0, 8), b => b.toString(16).padStart(2, '0')).join(' ');
+        log(`TX Feature (Report 0x${reportId.toString(16).toUpperCase()}, len ${totalLength}): ${hex}...`, 'tx');
+        await activeDevice.sendFeatureReport(reportId, buf);
+      }, tag);
+    }
+
+    async function readClassicFeature(reportId, commandByte) {
+      if (!activeDevice || !activeDevice.opened) throw new Error('Device not connected');
+      return enqueueCommand(async () => {
+        const totalLength = reportId === 0x11 ? 20 : 64;
+        const inverted = [commandByte ^ 0xFF];
+        const buf = new Uint8Array(totalLength).fill(0xFF);
+        buf[0] = inverted[0];
+        await activeDevice.sendFeatureReport(reportId, buf);
+        await new Promise(r => setTimeout(r, 100));
+        const dataView = await activeDevice.receiveFeatureReport(reportId);
+        const u8 = new Uint8Array(dataView.buffer, dataView.byteOffset, dataView.byteLength);
+        const unInverted = Array.from(u8, b => b ^ 0xFF);
+        const hex = unInverted.slice(0, 10).map(b => b.toString(16).padStart(2, '0')).join(' ');
+        log(`RX Feature (Report 0x${reportId.toString(16).toUpperCase()}): ${hex}...`, 'rx');
+        return unInverted;
+      }, 'readFeature');
+    }
+
+    // Input report listener (battery and connection updates)
+    function handleInputReport(event) {
+      const u8 = new Uint8Array(event.data.buffer, event.data.byteOffset, event.data.byteLength);
+      const hex = Array.from(u8, b => (b ^ 0xFF).toString(16).padStart(2, '0')).join('');
+      if (hex.startsWith('e2')) {
+        let battery = parseInt(hex.slice(8, 10), 16);
+        const charge = Number(hex.slice(6, 8));
+        if (battery <= 10 && battery > 0) battery *= 10;
+        updateBatteryUI(battery, charge);
+      }
+    }
+
+    function updateBatteryUI(battery, charge) {
+      if (battery >= 0 && battery <= 100) {
+        mouseState.battery = battery;
+        const badge = document.getElementById('batteryBadge');
+        if (badge) {
+          badge.style.display = 'inline-block';
+          badge.textContent = `${battery}% ${charge === 1 ? '⚡ Charging' : ''}`;
+        }
+        const heroBat = document.getElementById('heroBatteryText');
+        if (heroBat) heroBat.textContent = `${battery}%${charge === 1 ? ' ⚡' : ''}`;
+        const heroFill = document.getElementById('heroBatteryFill');
+        if (heroFill) {
+          heroFill.style.width = `${Math.min(100, Math.max(5, battery))}%`;
+          if (battery <= 20) {
+            heroFill.style.background = 'var(--danger)';
+          } else if (battery <= 40) {
+            heroFill.style.background = 'var(--warning)';
+          } else {
+            heroFill.style.background = 'var(--accent)';
+          }
+        }
+      }
+    }
+
+    async function readClassicAllInfo() {
+      try {
+        log('Querying mouse onboard settings (Report 0x12 0x67)...');
+        const raw = await readClassicFeature(0x12, 0x67);
+        const data = raw.length > 2 ? raw.slice(2) : raw;
+
+        if (data.length >= 20) {
+          const byte1 = data[1];
+          const byte2 = data[2];
+
+          // Official Zat binary-parser (little-endian):
+          // Field 1 (gDpiIndex): low 4 bits (byte1 & 0x0F)
+          // Field 2 (gRateIndex): high 4 bits ((byte1 >> 4) & 0x0F)
+          // Field 3 (usbDpiIndex): low 4 bits (byte2 & 0x0F)
+          // Field 4 (usbRateIndex): high 4 bits ((byte2 >> 4) & 0x0F)
+          const gDpi = byte1 & 0x0F;
+          const gRate = (byte1 >> 4) & 0x0F;
+          const usbDpi = byte2 & 0x0F;
+          const usbRate = (byte2 >> 4) & 0x0F;
+
+          const isWired = [0x4019, 0x4021, 0x4008].includes(activeDevice.productId);
+          const activeRate = isWired ? usbRate : ((gRate >= 0 && gRate <= 5) ? gRate : usbRate);
+          const activeDpi = isWired ? usbDpi : ((gDpi >= 0 && gDpi <= 5) ? gDpi : usbDpi);
+
+          // DPI Stages (dpi0 to dpi5)
+          const stages = [];
+          for (let i = 0; i < 6; i++) {
+            const val = data[4 + i * 2] | (data[4 + i * 2 + 1] << 8);
+            if (val >= 50 && val <= 42000) stages.push(val);
+          }
+          if (stages.length >= 4) mouseState.dpiStages = stages;
+
+          // DPI level count
+          const dpiSum = data[16];
+          if (dpiSum >= 0 && dpiSum < 6) {
+            mouseState.numLevels = dpiSum + 1;
+            document.querySelectorAll('.level-btn').forEach((btn, i) => {
+              btn.classList.toggle('active', i === dpiSum);
+            });
+          }
+
+          // Set active DPI stage
+          if (activeDpi >= 0 && activeDpi < mouseState.numLevels) {
+            mouseState.activeDpiIndex = activeDpi;
+          }
+
+          // Polling rate
+          if (activeRate >= 0 && activeRate <= 5) {
+            mouseState.rateIndex = activeRate;
+            selectRateUI(activeRate);
+          }
+
+          // Sensor features (Byte 17)
+          const sensorByte = data[17];
+          const bit0 = (sensorByte >> 0) & 1;
+          const bit1 = (sensorByte >> 1) & 1;
+          const bit2 = (sensorByte >> 2) & 1;
+          const bit3 = (sensorByte >> 3) & 1;
+          const bit4 = (sensorByte >> 4) & 1;
+          const bit6 = (sensorByte >> 6) & 1;
+          const bit7 = (sensorByte >> 7) & 1;
+
+          // LOD: 00 = 0.7mm, 10 = 1.0mm, 01 = 2.0mm
+          let lod = 0;
+          if (bit0 === 0 && bit1 === 0) lod = 0;
+          else if (bit0 === 1 && bit1 === 0) lod = 1;
+          else if (bit0 === 0 && bit1 === 1) lod = 2;
+          mouseState.lodIndex = lod;
+          setLodUI(lod);
+
+          // Sensor toggles
+          mouseState.ripple = bit2 === 1;
+          mouseState.angleSnap = bit3 === 1;
+          mouseState.motionSync = bit4 === 1;
+
+          document.getElementById('rippleToggle').checked = mouseState.ripple;
+          document.getElementById('angleSnapToggle').checked = mouseState.angleSnap;
+          document.getElementById('motionSyncToggle').checked = mouseState.motionSync;
+
+          // Performance Mode:
+          // bit7 === 0 -> Mode 1 (Performance / Eco)
+          // bit7 === 1 && bit6 === 0 -> Mode 2 (Gaming Mode)
+          // bit7 === 1 && bit6 === 1 -> Mode 3 (Extreme Mode)
+          let mode = 1;
+          if (bit7 === 0) {
+            mode = 1;
+          } else if (bit7 === 1 && bit6 === 0) {
+            mode = 2;
+          } else if (bit7 === 1 && bit6 === 1) {
+            mode = 3;
+          }
+          mouseState.gameMode = mode;
+          setModeUI(mode);
+
+          // Debounce
+          const debounce = data[18];
+          if (debounce >= 1 && debounce <= 20) {
+            mouseState.debounce = debounce;
+            document.getElementById('debounceSlider').value = debounce;
+            document.getElementById('debounceVal').textContent = debounce + 'ms';
+          }
+
+          // Sleep
+          const sleep = data[19];
+          if (sleep >= 0 && sleep <= 60) {
+            mouseState.sleep = sleep || 3;
+            mouseState.neverSleep = sleep === 0;
+            document.getElementById('sleepSlider').value = mouseState.sleep;
+            document.getElementById('sleepVal').textContent = mouseState.sleep + 'm';
+            document.getElementById('neverSleepCheckbox').checked = mouseState.neverSleep;
+          }
+
+          // Rotation angle (Byte 49 in Zat schema, NOT Byte 40 which was button 6)
+          const rawRot = data[49];
+          if (rawRot !== undefined) {
+            const rot = rawRot > 30 ? (rawRot > 128 ? rawRot - 256 : rawRot) : rawRot;
+            mouseState.rotateVal = (rot >= -30 && rot <= 30) ? rot : 0;
+            document.getElementById('rotateSlider').value = mouseState.rotateVal;
+            document.getElementById('rotateVal').textContent = `${mouseState.rotateVal}°`;
+          }
+
+          renderDpiStages();
+          log(`Onboard state loaded: Active Rate ${POLLING_RATES[mouseState.rateIndex]}Hz, Mode ${mouseState.gameMode}, Active Stage ${mouseState.activeDpiIndex + 1} (${mouseState.dpiStages[mouseState.activeDpiIndex]} DPI), Rotation ${mouseState.rotateVal}°`, 'info');
+        }
+      } catch (err) {
+        log(`Note reading allInfo: ${err.message}`, 'warn');
+      }
+    }
+
+    async function readClassicBattery() {
+      try {
+        log('Querying battery status (Report 0x11 0x06)...');
+        const raw = await readClassicFeature(0x11, 0x06);
+        const data = raw.length > 2 ? raw.slice(2) : raw;
+        if (data.length >= 10) {
+          let battery = data[8];
+          const charge = data[9];
+          if (battery <= 10 && battery > 0) battery *= 10;
+          updateBatteryUI(battery, charge);
+          log(`Battery: ${battery}%, Charging: ${charge === 1 ? 'Yes' : 'No'}`);
+        }
+      } catch (err) {
+        // Battery read is optional
+      }
+    }
+
+    async function readDeviceState() {
+      if (isClassicDevice(activeDevice)) {
+        await readClassicAllInfo();
+        await readClassicBattery();
+        renderDpiStages();
+        log('Device state loaded successfully!', 'info');
+      }
+    }
+
+    // --- Action Handlers with Debounce & Guard Delays ---
+    async function applyRate(idx) {
+      selectRateUI(idx);
+      if (!activeDevice) return;
+      try {
+        const rateHz = POLLING_RATES[idx];
+        log(`Setting Polling Rate to ${rateHz}Hz...`);
+        const isWired = [0x4019, 0x4021, 0x4008].includes(activeDevice.productId);
+        const usbRate = isWired ? idx : 0;
+        const freeRate = isWired ? 0 : idx;
+        // Direct isolated command 0x11 0x41 with tag 'rate'
+        await sendClassicFeature(0x11, [0x41, usbRate, freeRate], 20, 'rate');
+        log(`SUCCESS: Polling rate set to ${rateHz}Hz!`, 'info');
+      } catch (err) {
+        log(`Error applying rate: ${err.message}`, 'err');
+      }
+    }
+
+    let sensorDebounceTimer = null;
+    function scheduleApplySensorAndMode() {
+      clearTimeout(sensorDebounceTimer);
+      sensorDebounceTimer = setTimeout(() => {
+        if (activeDevice) applySensorAndMode();
+      }, 150);
+    }
+
+    function setMode(mode) {
+      setModeUI(mode);
+      scheduleApplySensorAndMode();
+    }
+
+    function setLod(idx) {
+      setLodUI(idx);
+      scheduleApplySensorAndMode();
+    }
+
+    function toggleSensorFeature(feature, isChecked) {
+      mouseState[feature] = isChecked;
+      scheduleApplySensorAndMode();
+    }
+
+    let rotateDebounceTimer = null;
+    function applyRotate(val) {
+      mouseState.rotateVal = parseInt(val);
+      clearTimeout(rotateDebounceTimer);
+      rotateDebounceTimer = setTimeout(() => {
+        if (activeDevice) applySensorAndMode();
+      }, 200);
+    }
+
+    async function applySensorAndMode() {
+      if (!activeDevice) return;
+      try {
+        const lod = mouseState.lodIndex;
+        const ripple = mouseState.ripple ? 1 : 2;
+        const line = mouseState.angleSnap ? 1 : 2;
+        const motionSync = mouseState.motionSync ? 1 : 2;
+        const gameMode = mouseState.gameMode;
+        // In MCHOSE protocol, rotateOpen must ALWAYS be 1 so the firmware applies and commits
+        // the rotation angle to onboard flash/EEPROM, even when setting back to 0°!
+        const rotateOpen = 1;
+        const rot = mouseState.rotateVal < 0 ? (mouseState.rotateVal + 256) : mouseState.rotateVal;
+
+        log(`Applying Sensor Settings: Mode ${gameMode}, LOD ${lod === 0 ? '0.7mm' : lod === 1 ? '1mm' : '2mm'}, MotionSync: ${mouseState.motionSync}, Angle: ${mouseState.rotateVal}°...`);
+        const payload = [0x42, lod, ripple, line, motionSync, 0, 0, gameMode, rotateOpen, rot & 0xFF];
+        await sendClassicFeature(0x11, payload, 20, 'sensorMode');
+        log(`SUCCESS: Sensor and performance mode updated (Angle: ${mouseState.rotateVal}°)`, 'info');
+      } catch (err) {
+        log(`Error updating sensor settings: ${err.message}`, 'err');
+      }
+    }
+
+    let dpiDebounceTimer = null;
+    function scheduleApplyDpi() {
+      clearTimeout(dpiDebounceTimer);
+      dpiDebounceTimer = setTimeout(() => {
+        if (activeDevice) applyDpi();
+      }, 150);
+    }
+
+    async function applyDpi() {
+      if (!activeDevice) return;
+      try {
+        log(`Writing DPI stages: ${mouseState.dpiStages.slice(0, mouseState.numLevels).join(', ')} (Active: Stage ${mouseState.activeDpiIndex + 1})...`);
+        const activeIdx = Math.min(mouseState.activeDpiIndex, mouseState.numLevels - 1);
+        const payload = [
+          0x40,
+          activeIdx,
+          activeIdx,
+          0 // reserved
+        ];
+        for (let i = 0; i < 6; i++) {
+          const val = mouseState.dpiStages[i] || 800;
+          payload.push(val & 0xFF);
+          payload.push((val >> 8) & 0xFF);
+        }
+        payload.push(mouseState.numLevels - 1); // sum
+        payload.push(0); // diff
+        for (let i = 0; i < 6; i++) {
+          const val = mouseState.dpiStages[i] || 800;
+          payload.push(val & 0xFF);
+          payload.push((val >> 8) & 0xFF);
+        }
+        await sendClassicFeature(0x12, payload, 64, 'dpi');
+        log(`SUCCESS: DPI configuration saved to onboard memory!`, 'info');
+      } catch (err) {
+        log(`Error applying DPI: ${err.message}`, 'err');
+      }
+    }
+
+    let debounceTimer = null;
+    function applyDebounce(ms) {
+      mouseState.debounce = parseInt(ms);
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(async () => {
+        if (!activeDevice) return;
+        try {
+          log(`Setting Key Debounce to ${ms}ms...`);
+          await sendClassicFeature(0x11, [0x43, parseInt(ms)], 20, 'debounce');
+          log(`SUCCESS: Debounce updated to ${ms}ms!`, 'info');
+        } catch (err) {
+          log(`Error applying debounce: ${err.message}`, 'err');
+        }
+      }, 200);
+    }
+
+    let sleepTimer = null;
+    function applySleep(minutes) {
+      mouseState.sleep = parseInt(minutes);
+      clearTimeout(sleepTimer);
+      sleepTimer = setTimeout(async () => {
+        if (!activeDevice) return;
+        try {
+          log(`Setting Sleep Timeout to ${minutes}m...`);
+          await sendClassicFeature(0x11, [0x0A, 1, parseInt(minutes)], 20, 'sleep');
+          log(`SUCCESS: Sleep timer updated!`, 'info');
+        } catch (err) {
+          log(`Error applying sleep: ${err.message}`, 'err');
+        }
+      }, 200);
+    }
+
+    async function toggleNeverSleep(never) {
+      mouseState.neverSleep = never;
+      if (!activeDevice) return;
+      try {
+        log(`Setting Never Sleep: ${never}...`);
+        await sendClassicFeature(0x11, [0x0A, never ? 0 : 1, never ? 0 : mouseState.sleep], 20, 'sleep');
+        log(`SUCCESS: Never sleep ${never ? 'enabled' : 'disabled'}!`, 'info');
+      } catch (err) {
+        log(`Error setting never sleep: ${err.message}`, 'err');
+      }
+    }
+
+    // Initialize UI
+    renderDpiStages();
+    selectRateUI(3); // 2000Hz default
+    setModeUI(2);    // Gaming Mode default
+  </script>
+</body>
+</html>
