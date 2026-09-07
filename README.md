@@ -37,7 +37,7 @@ Offline Mchose communicates directly with your mouse and 2.4G wireless dongle vi
 | Model | Sensor | Status |
 |---|---|---|
 | MCHOSE A7 V2 Ultra | PAW3950 | Supported |
-| MCHOSE K7 | PAW3395 | Supported |
+| MCHOSE K7 Series | PAW3395 | Supported |
 | MCHOSE A7 V2 Pro | PAW3950 | Untested |
 | MCHOSE A7 / A7 Pro | PAW3395 | Untested |
 | MCHOSE AX5 / AX5 Pro / Max | PAW3395 | Untested |
