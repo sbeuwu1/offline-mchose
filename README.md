@@ -8,7 +8,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-blue.svg)](https://www.microsoft.com/windows)
 
-**A lightweight, native Windows offline driver and hardware configurator for MCHOSE gaming mice.**
+**A lightweight, native (and vivecoded) Windows offline driver and hardware configurator for MCHOSE gaming mice.**
 
 </div>
 
