@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MCHOSE Offline Device Hub — A7 V2 Ultra / Pro Configurator</title>
+  <title>Offline Mchose — Hardware Configurator</title>
   <style>
     :root {
       --bg: #0b0f19;
@@ -1164,12 +1164,12 @@
           }
           if (stages.length >= 4) mouseState.dpiStages = stages;
 
-          // DPI level count
+          // DPI level count: hardware reports actual stage count (1 to 6)
           const dpiSum = data[16];
-          if (dpiSum >= 0 && dpiSum < 6) {
-            mouseState.numLevels = dpiSum + 1;
+          if (dpiSum >= 1 && dpiSum <= 6) {
+            mouseState.numLevels = dpiSum;
             document.querySelectorAll('.level-btn').forEach((btn, i) => {
-              btn.classList.toggle('active', i === dpiSum);
+              btn.classList.toggle('active', i + 1 === dpiSum);
             });
           }
 
@@ -1383,8 +1383,8 @@
           payload.push(val & 0xFF);
           payload.push((val >> 8) & 0xFF);
         }
-        payload.push(mouseState.numLevels - 1); // sum
-        payload.push(0); // diff
+        payload.push(mouseState.numLevels); // sum (1..6)
+        payload.push(255); // diff (0xFF = 255)
         for (let i = 0; i < 6; i++) {
           const val = mouseState.dpiStages[i] || 800;
           payload.push(val & 0xFF);

@@ -5,12 +5,17 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MchoseHub"
         mc:Ignorable="d"
-        Title="MCHOSE Hub" 
+        Title="Offline Mchose" 
         Height="880" Width="1300"
         MinHeight="700" MinWidth="1050"
         Icon="Assets/app_icon.ico"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource BrushBg}"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        RenderOptions.ClearTypeHint="Enabled"
         KeyDown="Window_KeyDown">
 
     <Window.Resources>
@@ -25,13 +30,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="BorderBrush" Value="{StaticResource BrushAccent}"/>
-                                <Setter Property="Background" Value="#231545"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BrushAccent}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -39,29 +43,34 @@
             </Setter>
         </Style>
 
-        <!-- Polling Rate Button Style -->
+        <!-- Rate Button Style -->
         <Style x:Key="RateButton" TargetType="Button">
             <Setter Property="Background" Value="#170E2F"/>
             <Setter Property="BorderBrush" Value="#2E1A5E"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Foreground" Value="#F8FAFC"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Height" Value="46"/>
+            <Setter Property="Padding" Value="6,8"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="BorderBrush" Value="{StaticResource BrushAccent}"/>
-                                <Setter Property="Background" Value="#231545"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BrushAccent}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Cyber Slider Style -->
+        <Style x:Key="CyberSlider" TargetType="Slider">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
         </Style>
 
         <!-- Segmented Button Style -->
@@ -138,7 +147,17 @@
                         <TextBlock Text="MCHOSE" FontWeight="Black" FontSize="14" Foreground="#0A0614"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="MCHOSE A7 Hub" FontWeight="Bold" FontSize="16" Foreground="{StaticResource BrushText}"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Offline Mchose" FontWeight="Bold" FontSize="16" Foreground="{StaticResource BrushText}"/>
+                            <!-- Crisp Neon Purple Credit Badge (Zero Blur) -->
+                            <Border Margin="10,0,0,0" Background="#240D4A" BorderBrush="#A855F7" BorderThickness="1" CornerRadius="10" Padding="8,2" VerticalAlignment="Center"
+                                    UseLayoutRounding="True" SnapsToDevicePixels="True">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="by " FontSize="11" FontWeight="Medium" Foreground="#C084FC" VerticalAlignment="Center"/>
+                                    <TextBlock Text="rapou7" FontSize="11" FontWeight="ExtraBold" Foreground="#FAF5FF" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                         <TextBlock Text="Device Settings &amp; Diagnostics" FontSize="11" Foreground="{StaticResource BrushTextMuted}"/>
                     </StackPanel>
                 </StackPanel>

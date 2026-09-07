@@ -24,13 +24,13 @@ namespace MchoseHub
             AppDomain.CurrentDomain.UnhandledException += (s, args) =>
             {
                 DebugLog($"AppDomain UnhandledException: {args.ExceptionObject}");
-                MessageBox.Show($"Application Error:\n{args.ExceptionObject}", "MCHOSE Offline Hub", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Application Error:\n{args.ExceptionObject}", "Offline Mchose", MessageBoxButton.OK, MessageBoxImage.Error);
             };
 
             DispatcherUnhandledException += (s, args) =>
             {
                 DebugLog($"DispatcherUnhandledException: {args.Exception}");
-                MessageBox.Show($"UI Error:\n{args.Exception.Message}\n\n{args.Exception.StackTrace}", "MCHOSE Offline Hub", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"UI Error:\n{args.Exception.Message}\n\n{args.Exception.StackTrace}", "Offline Mchose", MessageBoxButton.OK, MessageBoxImage.Error);
                 args.Handled = true;
             };
 
@@ -47,7 +47,7 @@ namespace MchoseHub
             catch (Exception ex)
             {
                 DebugLog($"App.OnStartup: Exception creating/showing MainWindow: {ex}");
-                MessageBox.Show($"Failed to launch MainWindow:\n{ex.Message}\n\n{ex.StackTrace}", "MCHOSE Offline Hub", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Failed to launch MainWindow:\n{ex.Message}\n\n{ex.StackTrace}", "Offline Mchose", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

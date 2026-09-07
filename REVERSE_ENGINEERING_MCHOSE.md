@@ -64,8 +64,8 @@ MCHOSE mice fall into two distinct communication generations depending on model 
   - `data[2]`: `activeDpiIndex`
   - `data[3]`: `0x00` (reserved)
   - `data[4..15]`: 6 DPI stage values as 16-bit little endian (50 to 42,000 DPI).
-  - `data[16]`: Number of stages minus 1 (`dpiSum`, 0 to 5).
-  - `data[17]`: `0x00` (`diff`, split X/Y flag).
+  - `data[16]`: Number of stages (`dpiSum`, 1 to 6).
+  - `data[17]`: `0xFF` (`diff`, 255 for unified X/Y, or split).
   - `data[18..29]`: Y-axis DPI stage values (mirror of data[4..15]).
 
 #### 7. Read All Settings (`0x12 0x67`)

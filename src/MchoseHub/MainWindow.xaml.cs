@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -381,7 +382,11 @@ namespace MchoseHub
 
         private void RenderDpiStages()
         {
-            dpiStagesContainer.Children.Clear();
+            bool wasUpdating = _isUpdatingUI;
+            _isUpdatingUI = true;
+            try
+            {
+                dpiStagesContainer.Children.Clear();
 
             for (int i = 0; i < _state.NumLevels; i++)
             {
@@ -518,7 +523,12 @@ namespace MchoseHub
                 dpiStagesContainer.Children.Add(rowBorder);
             }
 
-            activeDpiBadge.Text = _state.ActiveDpiText;
+                activeDpiBadge.Text = _state.ActiveDpiText;
+            }
+            finally
+            {
+                _isUpdatingUI = wasUpdating;
+            }
         }
 
         private async void BtnMode_Click(object sender, RoutedEventArgs e)

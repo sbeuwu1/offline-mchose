@@ -1,22 +1,29 @@
-# MCHOSE Offline Device Hub
+# Offline Mchose
 
 [![Build and Release](https://github.com/mchose-offline/mchose-hub/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/mchose-offline/mchose-hub/actions/workflows/build-and-release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-blue.svg)](https://www.microsoft.com/windows)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
+[![Creator](https://img.shields.io/badge/Created%20by-rapou7-C084FC.svg)]()
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)]()
 
-A lightweight, **100% native Windows offline driver and hardware configurator** for **MCHOSE** gaming mice (including the **A7 V2 Ultra / Pro**, **AX5**, **K7**, **M7**, and **A5** series).
+A lightweight, **100% native Windows offline driver and hardware configurator** for **MCHOSE** gaming mice (including the **A7 V2 Ultra / Pro**, **AX5**, **K7**, **M7**, and **A5** series), created by **rapou7**.
+
+> [!IMPORTANT]
+> **LEGAL & NON-AFFILIATION DISCLAIMER:**  
+> **Offline Mchose** is an independent, unofficial community project created by **rapou7**. It is **NOT** affiliated with, authorized, maintained, sponsored, or endorsed by **Shenzhen ZhiHaihe Technology Co., Ltd. (深圳市智海和科技有限公司)**, **MCHOSE**, or any of their affiliates or subsidiaries.  
+> 
+> All product names, logos, brands, trademarks, and registered trademarks belong to their respective holders. Use of them does not imply any affiliation with or endorsement by them. This utility is provided strictly "as-is" without warranty.
 
 Zero background telemetry, zero cloud dependencies, instant startup, and full control over your mouse's onboard hardware memory.
 
 ---
 
-## Why MCHOSE Offline Hub?
+## Why Offline Mchose?
 
 The official web driver requires active internet connectivity, loads megabytes of third-party tracking scripts and cloud loaders, and cannot run in air-gapped or low-latency competitive gaming environments.
 
-**MCHOSE Offline Hub** communicates directly with your mouse and 2.4G wireless dongle via native Windows HID APIs:
+**Offline Mchose** communicates directly with your mouse and 2.4G wireless dongle via native Windows HID APIs:
 
 - 🚀 **100% Offline & Private:** Zero network requests, zero telemetry, zero analytics.
 - ⚡ **Lightweight Native WPF:** Starts in <0.2s, consumes ~35 MB of RAM (compared to ~300+ MB for Electron or browser tabs).
@@ -181,9 +188,28 @@ This repository includes a GitHub Actions workflow (`.github/workflows/build-and
 
 ---
 
-## Disclaimer
+## Credits
 
-This is an independent open-source project created by the community. It is **not** affiliated with, authorized, or endorsed by Shenzhen ZhiHaihe Technology Co., Ltd. or MCHOSE. All registered trademarks and product names belong to their respective owners.
+* **rapou7** — Creator, reverse engineering, and lead developer.
+
+---
+
+## ⚖️ Legal Disclaimer & Limitation of Liability
+
+### 1. Unofficial Community Project (Non-Affiliation)
+**Offline Mchose** is an independent, open-source community tool created by **rapou7** for hardware enthusiasts. It is **NOT** an official product or service of **Shenzhen ZhiHaihe Technology Co., Ltd. (深圳市智海和科技有限公司)** or **MCHOSE**, nor is it supported, tested, certified, or endorsed by them.
+
+### 2. Intellectual Property & Trademarks
+"MCHOSE", "迈从", and product model names (such as "A7", "A7 V2", "AX5", "K7", "M7", "A5", "PAW3950", "PAW3395") are trademarks or registered trademarks of their respective legal owners. Their use in this repository, software documentation, and user interfaces is strictly for nominative identification, device compatibility, and interoperability purposes under fair use.
+
+### 3. Warranty Disclaimer ("AS IS")
+THIS SOFTWARE AND ACCOMPANYING DOCUMENTATION ARE PROVIDED BY THE AUTHOR (**rapou7**) AND CONTRIBUTORS "AS IS", AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE DISCLAIMED.
+
+### 4. Limitation of Liability
+IN NO EVENT SHALL THE AUTHOR, CONTRIBUTORS, OR COPYRIGHT HOLDERS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, HARDWARE DAMAGE, FIRMWARE/DEVICE BRICKING, LOSS OF DATA, CORRUPTED SETTINGS, OR VOIDED MANUFACTURER WARRANTIES) ARISING IN ANY WAY OUT OF THE USE, MISUSE, OR INABILITY TO USE THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. USERS ASSUME ALL RESPONSIBILITY AND RISK FOR USING THIS TOOL.
+
+### 5. Interoperability & Clean-Room Research
+The communication protocol implemented in this software was developed through independent observation of standard USB Human Interface Device (HID) feature and output reports to allow local, offline hardware configuration without internet connectivity or telemetry.
 
 ---
 

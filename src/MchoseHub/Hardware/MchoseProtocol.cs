@@ -308,22 +308,31 @@ namespace MchoseHub.Hardware
                         {
                             stages.Add(val);
                         }
+                        else
+                        {
+                            stages.Add((i < _state.DpiStages.Length) ? _state.DpiStages[i] : 800);
+                        }
                     }
-                    if (stages.Count >= 4)
-                    {
-                        _state.DpiStages = stages.ToArray();
-                    }
+                    _state.DpiStages = stages.ToArray();
 
-                    // DPI Level count (data[16] = dpiSum = numLevels - 1)
+                    // DPI Level count: hardware reports actual stage count (1 to 6)
                     int dpiSum = data[16];
-                    if (dpiSum >= 0 && dpiSum < 6)
+                    if (dpiSum >= 1 && dpiSum <= 6)
                     {
-                        _state.NumLevels = dpiSum + 1;
+                        _state.NumLevels = dpiSum;
+                    }
+                    else if (dpiSum == 0)
+                    {
+                        _state.NumLevels = 1;
                     }
 
                     if (activeDpi >= 0 && activeDpi < _state.NumLevels)
                     {
                         _state.ActiveDpiIndex = activeDpi;
+                    }
+                    else if (_state.ActiveDpiIndex >= _state.NumLevels)
+                    {
+                        _state.ActiveDpiIndex = _state.NumLevels - 1;
                     }
 
                     if (activeRate >= 0 && activeRate <= 5)
@@ -477,8 +486,8 @@ namespace MchoseHub.Hardware
                 payload.Add((byte)((val >> 8) & 0xFF));
             }
 
-            payload.Add((byte)(_state.NumLevels - 1)); // dpiSum
-            payload.Add(0x00); // diff
+            payload.Add((byte)_state.NumLevels); // sum: actual stage count (1 to 6)
+            payload.Add(0xFF);                   // diff: 0xFF (255) for standard unified X/Y
 
             for (int i = 0; i < 6; i++)
             {

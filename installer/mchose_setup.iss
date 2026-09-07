@@ -5,8 +5,8 @@
 #define MyAppVersion "1.0.0"
 #endif
 
-#define MyAppName "MCHOSE Offline Hub"
-#define MyAppPublisher "Community Driver"
+#define MyAppName "Offline Mchose"
+#define MyAppPublisher "rapou7"
 #define MyAppURL "https://github.com/mchose-offline/mchose-hub"
 #define MyAppExeName "MchoseHub.exe"
 

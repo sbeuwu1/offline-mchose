@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:MchoseHub"
-        Title="Hardware Tester"
+        Title="Offline Mchose • Hardware Tester"
         WindowStyle="None"
         WindowState="Maximized"
         Topmost="True"
@@ -10,6 +10,11 @@
         Background="#0A0614"
         Icon="Assets/app_icon.ico"
         Cursor="Cross"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        RenderOptions.ClearTypeHint="Enabled"
         KeyDown="Window_KeyDown"
         Loaded="Window_Loaded"
         Closing="Window_Closing">
@@ -28,9 +33,18 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Left: Title -->
+                <!-- Left: Title & Credits -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Hardware Tester" FontWeight="Bold" FontSize="16" Foreground="#F1F5F9" VerticalAlignment="Center"/>
+                    <TextBlock Text="Offline Mchose" FontWeight="Bold" FontSize="16" Foreground="#F1F5F9" VerticalAlignment="Center"/>
+                    <!-- Crisp Neon Purple Credit Badge (Zero Blur) -->
+                    <Border Margin="10,0,0,0" Background="#240D4A" BorderBrush="#A855F7" BorderThickness="1" CornerRadius="10" Padding="8,2" VerticalAlignment="Center"
+                            UseLayoutRounding="True" SnapsToDevicePixels="True">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="by " FontSize="11" FontWeight="Medium" Foreground="#C084FC" VerticalAlignment="Center"/>
+                            <TextBlock Text="rapou7" FontSize="11" FontWeight="ExtraBold" Foreground="#FAF5FF" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Text="• Hardware Tester" FontWeight="SemiBold" FontSize="13" Foreground="#94A3B8" Margin="10,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- Center: Simple Instruction -->
