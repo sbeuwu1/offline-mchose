@@ -7,7 +7,7 @@
 
 #define MyAppName "Offline Mchose"
 #define MyAppPublisher "rapou7"
-#define MyAppURL "https://github.com/mchose-offline/mchose-hub"
+#define MyAppURL "https://github.com/Rapou7/mchose-drivers-offline"
 #define MyAppExeName "MchoseHub.exe"
 
 [Setup]
@@ -19,6 +19,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
+LicenseFile=..\LICENSE
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
