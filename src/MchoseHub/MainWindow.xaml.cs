@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -28,6 +29,18 @@ namespace MchoseHub
         private readonly DispatcherTimer _dpiDebounceTimer;
         private readonly DispatcherTimer _debounceTimer;
         private readonly DispatcherTimer _sleepDebounceTimer;
+        private readonly DispatcherTimer _batteryRefreshTimer;
+        private readonly DispatcherTimer _deviceChangeTimer;
+        private readonly DispatcherTimer _presenceWatchdogTimer;
+
+        private HwndSource? _hwndSource;
+        private bool _isConnecting;
+        private bool _autoConnectSuspended;
+        private bool _lastPresenceProbe;
+        private bool _lastConnectedProbe;
+        private DateTime _lastLinkRebuildUtc = DateTime.MinValue;
+        private DateTime _lastLinkProbeUtc = DateTime.MinValue;
+        private DateTime _lastConnectFailureUtc = DateTime.MinValue;
 
         private bool _isUpdatingUI = true;
         private bool _isInitialized;
@@ -41,6 +54,11 @@ namespace MchoseHub
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
         private const int DWMWA_CAPTION_COLOR = 35;
         private const int DWMWA_TEXT_COLOR = 36;
+
+        private const int WM_DEVICECHANGE = 0x0219;
+        private const int DBT_DEVNODES_CHANGED = 0x0007;
+        private const int DBT_DEVICEARRIVAL = 0x8000;
+        private const int DBT_DEVICEREMOVECOMPLETE = 0x8004;
 
         public MainWindow()
         {
@@ -76,6 +94,35 @@ namespace MchoseHub
                 await SafeApplyAsync(() => _protocol.ApplySleepAsync(_state.SleepMinutes, _state.NeverSleep));
             };
 
+            // Battery drifts while the mouse is idle and live input reports are not guaranteed,
+            // so poll it periodically.
+            _batteryRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(60) };
+            _batteryRefreshTimer.Tick += async (s, e) =>
+            {
+                if (_shutdownStarted || !_hid.IsConnected) return;
+                await SafeApplyAsync(_protocol.ReadBatteryAsync);
+            };
+
+            // WM_DEVICECHANGE storms on every USB enumeration; coalesce them into one probe.
+            _deviceChangeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
+            _deviceChangeTimer.Tick += async (s, e) =>
+            {
+                _deviceChangeTimer.Stop();
+                await SafeApplyAsync(RefreshDevicePresenceAsync);
+            };
+
+            // Safety net: WM_DEVICECHANGE is best-effort, so also reconcile the real device list
+            // periodically. Enumeration is cheap (a few ms) and this keeps the UI honest.
+            _presenceWatchdogTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _presenceWatchdogTimer.Tick += async (s, e) =>
+            {
+                await SafeApplyAsync(RefreshDevicePresenceAsync);
+            };
+            _presenceWatchdogTimer.Start();
+
+            _hid.DeviceRemoved += OnHidDeviceRemoved;
+            _state.PropertyChanged += OnStatePropertyChanged;
+
             InitializeComponent();
 
             logItemsControl.ItemsSource = _logEntries;
@@ -91,6 +138,30 @@ namespace MchoseHub
             base.OnSourceInitialized(e);
             var hwnd = new WindowInteropHelper(this).Handle;
             ApplyWindowStyle(hwnd);
+
+            // Listen for device arrival/removal so the UI tracks cable and dongle changes.
+            _hwndSource = HwndSource.FromHwnd(hwnd);
+            _hwndSource?.AddHook(WndProc);
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_DEVICECHANGE)
+            {
+                int evt = wParam.ToInt32();
+                if (evt == DBT_DEVNODES_CHANGED || evt == DBT_DEVICEARRIVAL || evt == DBT_DEVICEREMOVECOMPLETE)
+                {
+                    App.DebugLog($"WM_DEVICECHANGE: 0x{evt:X4}");
+
+                    // Topology changed: a manual disconnect pause no longer applies.
+                    _autoConnectSuspended = false;
+
+                    _deviceChangeTimer.Stop();
+                    _deviceChangeTimer.Start();
+                }
+            }
+
+            return IntPtr.Zero;
         }
 
         private void ApplyWindowStyle(IntPtr hwnd)
@@ -166,6 +237,15 @@ namespace MchoseHub
             }
 
             App.DebugLog("MainWindow_Closing: disposing resources...");
+            _hid.DeviceRemoved -= OnHidDeviceRemoved;
+            _state.PropertyChanged -= OnStatePropertyChanged;
+
+            if (_hwndSource != null)
+            {
+                _hwndSource.RemoveHook(WndProc);
+                _hwndSource = null;
+            }
+
             _protocol.Dispose();
             _hid.Dispose();
             App.FlushLog();
@@ -181,6 +261,9 @@ namespace MchoseHub
             _dpiDebounceTimer.Stop();
             _debounceTimer.Stop();
             _sleepDebounceTimer.Stop();
+            _batteryRefreshTimer.Stop();
+            _deviceChangeTimer.Stop();
+            _presenceWatchdogTimer.Stop();
         }
 
         private static async Task SafeApplyAsync(Func<Task> action)
@@ -258,76 +341,177 @@ namespace MchoseHub
             });
         }
 
-        private async Task TryConnectAsync()
+        private async Task TryConnectAsync(bool automatic = false)
         {
-            Log("Searching for MCHOSE USB / 2.4G mouse hardware...", LogType.Info);
-            App.DebugLog("TryConnectAsync: scanning HID devices in background...");
+            if (_isConnecting || _shutdownStarted)
+            {
+                return;
+            }
 
-            bool connected = false;
+            // Do not hammer a mouse that is present but not answering (e.g. switched off).
+            if (automatic && (DateTime.UtcNow - _lastConnectFailureUtc).TotalSeconds < 10)
+            {
+                return;
+            }
+
+            _isConnecting = true;
             try
             {
-                connected = await Task.Run(() => _hid.Connect());
+                Log("Searching for MCHOSE USB / 2.4G mouse hardware...", LogType.Info);
+                App.DebugLog("TryConnectAsync: scanning HID devices in background...");
+
+                bool connected = false;
+                try
+                {
+                    connected = await Task.Run(() => _hid.Connect());
+                }
+                catch (Exception ex)
+                {
+                    App.DebugLog($"TryConnectAsync: HID enumeration failed: {ex}");
+                    Log($"Device scan failed: {ex.Message}", LogType.Error);
+                }
+
+                App.DebugLog($"TryConnectAsync: connected={connected}");
+
+                if (!connected || _hid.CurrentDevice == null)
+                {
+                    ApplyDisconnectedState("Disconnected");
+                    App.DebugLog("TryConnectAsync: No matching device found.");
+                    return;
+                }
+
+                bool linkIsLive = await ProbeCurrentLinkAsync();
+
+                if (!linkIsLive)
+                {
+                    // The opened interface exists but carries no data. This is what happens when
+                    // the cable and the 2.4G dongle are both plugged in: the mouse runs on only
+                    // one of them, the other still accepts requests but answers with 0xFF.
+                    string currentPath = _hid.CurrentDevice.DevicePath;
+                    var alternatives = await Task.Run(() => NativeHid.ConfigCandidates()
+                        .Where(d => d.DevicePath != currentPath)
+                        .ToList());
+
+                    foreach (var candidate in alternatives)
+                    {
+                        App.DebugLog($"Trying configuration link PID 0x{candidate.ProductId:X4}...");
+                        _batteryRefreshTimer.Stop();
+                        _hid.Disconnect();
+
+                        bool opened = false;
+                        try
+                        {
+                            opened = await Task.Run(() => _hid.Connect(candidate));
+                        }
+                        catch (Exception ex)
+                        {
+                            App.DebugLog($"Switching to PID 0x{candidate.ProductId:X4} failed: {ex.Message}");
+                        }
+
+                        if (!opened)
+                        {
+                            continue;
+                        }
+
+                        if (await ProbeCurrentLinkAsync())
+                        {
+                            linkIsLive = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (linkIsLive)
+                {
+                    _lastConnectFailureUtc = DateTime.MinValue;
+                    UpdateUIFromState();
+                    _batteryRefreshTimer.Start();
+                    App.DebugLog("TryConnectAsync: Initial sync complete.");
+                }
+                else
+                {
+                    _lastConnectFailureUtc = DateTime.UtcNow;
+                    _hid.Disconnect();
+                    ApplyDisconnectedState("Mouse not responding");
+                    Log("Mouse detected, but none of its configuration links answered. Check whether the mouse is in wired or 2.4G mode.", LogType.Warn);
+                    App.DebugLog("TryConnectAsync: no live configuration link.");
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                App.DebugLog($"TryConnectAsync: HID enumeration failed: {ex}");
-                Log($"Device scan failed: {ex.Message}", LogType.Error);
+                _isConnecting = false;
             }
+        }
 
-            App.DebugLog($"TryConnectAsync: connected={connected}");
-
-            if (connected && _hid.CurrentDevice != null)
+        /// <summary>
+        /// Shows the connected state for the currently opened link and verifies it carries real
+        /// settings. Returns false when the link stays silent (wrong interface for the mode).
+        /// </summary>
+        private async Task<bool> ProbeCurrentLinkAsync()
+        {
+            var device = _hid.CurrentDevice;
+            if (device == null)
             {
-                _state.IsConnected = true;
-                _state.ProductName = _hid.CurrentDevice.Product;
-                _state.VendorId = _hid.CurrentDevice.VendorId;
-                _state.ProductId = _hid.CurrentDevice.ProductId;
-
-                statusDot.Fill = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81)); // Green
-                statusText.Text = _state.ProductName;
-                btnConnect.Content = "Disconnect";
-                btnConnect.Background = new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55));
-
-                heroDeviceName.Text = _state.ProductName;
-                heroVidPid.Text = _state.VidPidString;
-
-                Log($"Connected to {_state.ProductName} ({_state.VidPidString})", LogType.Info);
-
-                App.DebugLog("TryConnectAsync: Reading settings & battery...");
-                await _protocol.ReadAllSettingsAsync();
-                await _protocol.ReadBatteryAsync();
-
-                UpdateUIFromState();
-                App.DebugLog("TryConnectAsync: Initial sync complete.");
+                return false;
             }
-            else
+
+            _autoConnectSuspended = false;
+            _state.IsConnected = true;
+            _state.ProductName = device.Product;
+            _state.VendorId = device.VendorId;
+            _state.ProductId = device.ProductId;
+
+            statusDot.Fill = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81)); // Green
+            statusText.Text = _state.ProductName;
+            btnConnect.Content = "Disconnect";
+            btnConnect.Background = new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55));
+
+            heroDeviceName.Text = _state.ProductName;
+            heroVidPid.Text = _state.VidPidString;
+
+            App.DebugLog($"TryConnectAsync: Reading settings (PID 0x{device.ProductId:X4})...");
+            await _protocol.ReadAllSettingsAsync();
+
+            if (!_protocol.LastReadHadData)
             {
-                _state.IsConnected = false;
-                statusDot.Fill = new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44)); // Red
-                statusText.Text = "Disconnected";
-                btnConnect.Content = "Connect Mouse";
-                btnConnect.Background = (SolidColorBrush)FindResource("BrushPrimary");
-                App.DebugLog("TryConnectAsync: No matching device found.");
+                App.DebugLog($"PID 0x{device.ProductId:X4} opened but returned no settings.");
+                return false;
             }
+
+            await _protocol.ReadBatteryAsync();
+            Log($"Connected to {_state.ProductName} ({_state.VidPidString})", LogType.Info);
+            return true;
+        }
+
+        /// <summary>
+        /// Puts the UI into the "no device" state. Used by user disconnect, unplug and failed scans.
+        /// </summary>
+        private void ApplyDisconnectedState(string status)
+        {
+            _state.IsConnected = false;
+            statusDot.Fill = new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44)); // Red
+            statusText.Text = status;
+            batteryBadge.Visibility = Visibility.Collapsed;
+            btnConnect.Content = "Connect Mouse";
+            btnConnect.Background = (SolidColorBrush)FindResource("BrushPrimary");
+            heroBatteryText.Text = "--%";
+            heroBatteryFill.Width = 0;
+            _batteryRefreshTimer.Stop();
         }
 
         private async void BtnConnect_Click(object sender, RoutedEventArgs e)
         {
             if (_hid.IsConnected)
             {
+                // Respect the user's choice: don't let the watchdog reconnect immediately.
+                _autoConnectSuspended = true;
                 _hid.Disconnect();
-                _state.IsConnected = false;
-                statusDot.Fill = new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44));
-                statusText.Text = "Disconnected";
-                batteryBadge.Visibility = Visibility.Collapsed;
-                btnConnect.Content = "Connect Mouse";
-                btnConnect.Background = (SolidColorBrush)FindResource("BrushPrimary");
-                heroBatteryText.Text = "--%";
-                heroBatteryFill.Width = 0;
+                ApplyDisconnectedState("Disconnected");
                 Log("Mouse disconnected by user.", LogType.Info);
             }
             else
             {
+                _autoConnectSuspended = false;
                 await TryConnectAsync();
             }
         }
@@ -339,21 +523,7 @@ namespace MchoseHub
             try
             {
                 // Battery
-                if (_state.BatteryLevel >= 0)
-                {
-                    heroBatteryText.Text = _state.BatteryText;
-                    batteryBadge.Text = _state.BatteryText;
-                    batteryBadge.Visibility = Visibility.Visible;
-
-                    heroBatteryFill.Width = (_state.BatteryLevel / 100.0) * 34.0;
-                    Color batColor = _state.BatteryLevel switch
-                    {
-                        <= 20 => Color.FromRgb(0xEF, 0x44, 0x44),
-                        <= 40 => Color.FromRgb(0xF5, 0x9E, 0x0B),
-                        _ => Color.FromRgb(0xA8, 0x55, 0xF7)
-                    };
-                    heroBatteryFill.Background = new SolidColorBrush(batColor);
-                }
+                UpdateBatteryUI();
 
                 // Modes
                 SetModeButtonStyles(_state.GameMode);
@@ -392,6 +562,142 @@ namespace MchoseHub
             {
                 _isUpdatingUI = false;
             }
+        }
+
+        private void UpdateBatteryUI()
+        {
+            if (_state.BatteryLevel < 0)
+            {
+                return;
+            }
+
+            heroBatteryText.Text = _state.BatteryText;
+            batteryBadge.Text = _state.BatteryText;
+            batteryBadge.Visibility = Visibility.Visible;
+
+            heroBatteryFill.Width = (_state.BatteryLevel / 100.0) * 34.0;
+            Color batColor = _state.BatteryLevel switch
+            {
+                <= 20 => Color.FromRgb(0xEF, 0x44, 0x44),
+                <= 40 => Color.FromRgb(0xF5, 0x9E, 0x0B),
+                _ => Color.FromRgb(0xA8, 0x55, 0xF7)
+            };
+            heroBatteryFill.Background = new SolidColorBrush(batColor);
+        }
+
+        /// <summary>
+        /// Reacts to battery / active-stage changes coming from the HID thread (live input
+        /// reports and periodic battery polls) so the UI is no longer frozen at connect time.
+        /// </summary>
+        private void OnStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (_shutdownStarted)
+            {
+                return;
+            }
+
+            switch (e.PropertyName)
+            {
+                case nameof(MouseState.BatteryLevel):
+                case nameof(MouseState.IsCharging):
+                    RunOnUi(() =>
+                    {
+                        if (_isUpdatingUI) return;
+                        UpdateBatteryUI();
+                    });
+                    break;
+
+                case nameof(MouseState.ActiveDpiIndex):
+                    RunOnUi(() =>
+                    {
+                        if (_isUpdatingUI) return;
+                        activeDpiBadge.Text = _state.ActiveDpiText;
+                        RenderDpiStages();
+                    });
+                    break;
+            }
+        }
+
+        private void OnHidDeviceRemoved()
+        {
+            RunOnUi(() =>
+            {
+                if (_shutdownStarted) return;
+
+                ApplyDisconnectedState("Device unplugged");
+                Log("Mouse disconnected (device removed).", LogType.Warn);
+
+                // Probe again shortly in case the dongle re-enumerates.
+                _deviceChangeTimer.Stop();
+                _deviceChangeTimer.Start();
+            });
+        }
+
+        /// <summary>
+        /// Hot-plug handler: reconciles the UI with what is actually plugged in.
+        /// Reconnects whenever a config-capable device is present, unless the user has just
+        /// pressed "Disconnect" themselves (that pause is cleared by the next topology change).
+        /// </summary>
+        private async Task RefreshDevicePresenceAsync()
+        {
+            if (_shutdownStarted)
+            {
+                return;
+            }
+
+            bool present = NativeHid.IsSupportedDevicePresent();
+            bool connected = _hid.IsConnected;
+
+            if (present != _lastPresenceProbe || connected != _lastConnectedProbe)
+            {
+                App.DebugLog($"Presence probe: present={present}, connected={connected}, suspended={_autoConnectSuspended}");
+                _lastPresenceProbe = present;
+                _lastConnectedProbe = connected;
+            }
+
+            if (connected)
+            {
+                if (!_hid.IsCurrentDevicePresent())
+                {
+                    _hid.Disconnect();
+                    ApplyDisconnectedState("Device unplugged");
+                    Log("Mouse disconnected (device removed).", LogType.Warn);
+                    return;
+                }
+
+                // Poll link health so a wired <-> 2.4G switch is noticed without user action.
+                if ((DateTime.UtcNow - _lastLinkProbeUtc).TotalSeconds >= 20 && _protocol.PendingCount == 0)
+                {
+                    _lastLinkProbeUtc = DateTime.UtcNow;
+                    await _protocol.ProbeLinkAsync();
+                }
+
+                MaybeRebuildLink();
+                return;
+            }
+
+            if (present && !_autoConnectSuspended)
+            {
+                await TryConnectAsync(automatic: true);
+            }
+        }
+
+        /// <summary>
+        /// If the opened link stops answering while another configuration link exists (the user
+        /// moved the mouse from the cable to the 2.4G dongle or back), drop the current handle so
+        /// the next connect probes and picks the live one. Throttled to avoid churn.
+        /// </summary>
+        private void MaybeRebuildLink()
+        {
+            if (_protocol.LastReadHadData) return;
+
+            if ((DateTime.UtcNow - _lastLinkRebuildUtc).TotalSeconds < 60) return;
+            if (NativeHid.ConfigInterfaceCount() < 2) return;
+
+            _lastLinkRebuildUtc = DateTime.UtcNow;
+            App.DebugLog("Connected link stopped answering; re-probing configuration interfaces...");
+            _hid.Disconnect();
+            ApplyDisconnectedState("Reconnecting...");
         }
 
         private void SetModeButtonStyles(int mode)

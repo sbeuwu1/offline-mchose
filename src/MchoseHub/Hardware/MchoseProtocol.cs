@@ -20,6 +20,13 @@ namespace MchoseHub.Hardware
         private readonly CancellationTokenSource _cts = new();
         private readonly CancellationToken _token;
 
+        /// <summary>
+        /// True when the last "read all settings" query got real bytes back. False means the
+        /// opened link is not the one the mouse is running on (e.g. wired interface while the
+        /// mouse talks over the 2.4G dongle), so the UI must not pretend it read settings.
+        /// </summary>
+        public bool LastReadHadData { get; private set; } = true;
+
         // The CTS is never disposed: the worker can still race a Dispose() call and would
         // otherwise hit ObjectDisposedException on _cts.Token. A CTS without timers owns no
         // unmanaged resources, so leaving it alive is the safer trade-off.
@@ -280,7 +287,8 @@ namespace MchoseHub.Hardware
                             }
                         }
 
-                        if (hasData || attempt == 4)
+                        // Only real data counts: an all-0xFF response means this link is inert.
+                        if (hasData)
                         {
                             result = inverted;
                             break;
@@ -336,7 +344,8 @@ namespace MchoseHub.Hardware
                 byte[] raw = await ReadClassicFeatureAsync(0x12, 0x67, "readAllSettings");
                 if (raw.Length < 20)
                 {
-                    Log("Onboard settings response too short.", "Warn");
+                    LastReadHadData = false;
+                    Log("No settings response on this link — the mouse is probably talking over another interface (wired vs 2.4G).", "Warn");
                     return;
                 }
 
@@ -355,6 +364,8 @@ namespace MchoseHub.Hardware
 
                 if (data.Length >= 20)
                 {
+                    LastReadHadData = true;
+
                     byte byte1 = data[1]; // gDpiIndex (low 4) & gRateIndex (high 4)
                     byte byte2 = data[2]; // usbDpiIndex (low 4) & usbRateIndex (high 4)
 
@@ -501,6 +512,22 @@ namespace MchoseHub.Hardware
             }
         }
 
+        /// <summary>
+        /// Cheap liveness check for the currently opened configuration link.
+        /// </summary>
+        public async Task<bool> ProbeLinkAsync()
+        {
+            if (_disposed || !_hid.IsConnected)
+            {
+                LastReadHadData = false;
+                return false;
+            }
+
+            byte[] raw = await ReadClassicFeatureAsync(0x12, 0x67, "ping");
+            LastReadHadData = raw.Length >= 20;
+            return LastReadHadData;
+        }
+
         public async Task ReadBatteryAsync()
         {
             if (_disposed) return;
@@ -522,6 +549,11 @@ namespace MchoseHub.Hardware
                         _state.IsCharging = (charge == 1);
                         Log($"Battery: {battery}%, Charging: {_state.IsCharging}", "Info");
                     }
+                }
+                else
+                {
+                    // Keep the last known value instead of showing a phantom 0%.
+                    Log("No battery response on this link; keeping the last known value.", "Warn");
                 }
             }
             catch (Exception ex)

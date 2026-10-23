@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -144,6 +145,9 @@ namespace MchoseHub.Hardware
 
         public static readonly ushort[] SupportedVids = { 0x3837, 0x5253 };
 
+        /// <summary>Vendor HID usage page that exposes the mouse configuration protocol.</summary>
+        public const ushort ConfigUsagePage = 0xFF01;
+
         private SafeFileHandle? _deviceHandle;
         private FileStream? _readStream;
         private CancellationTokenSource? _readCts;
@@ -152,6 +156,10 @@ namespace MchoseHub.Hardware
         // Guards the native handle against UI-thread Disconnect() racing the protocol worker.
         private readonly object _deviceLock = new();
         private bool _disposed;
+        private bool _deviceLostReported;
+
+        private const int ERROR_INVALID_HANDLE = 6;
+        private const int ERROR_DEVICE_NOT_CONNECTED = 1167;
 
         public bool IsConnected
         {
@@ -167,6 +175,52 @@ namespace MchoseHub.Hardware
 
         public event Action<byte[]>? InputReportReceived;
         public event Action<string, string>? LogMessage;
+
+        /// <summary>
+        /// Raised once when an I/O transfer or the input stream proves the device is gone
+        /// (cable pulled, dongle removed, mouse powered off).
+        /// </summary>
+        public event Action? DeviceRemoved;
+
+        /// <summary>
+        /// Cheap topology probe used for hot-plug handling: is any supported MCHOSE HID interface present?
+        /// </summary>
+        public static bool IsSupportedDevicePresent() => EnumerateDevices().Count > 0;
+
+        /// <summary>
+        /// Verifies that the currently opened interface is still enumerated by Windows.
+        /// </summary>
+        public bool IsCurrentDevicePresent()
+        {
+            var info = _currentDeviceInfo;
+            if (info == null) return false;
+
+            return EnumerateDevices()
+                .Any(d => string.Equals(d.DevicePath, info.DevicePath, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private void HandleTransferFailure(int error)
+        {
+            if (error != ERROR_DEVICE_NOT_CONNECTED && error != ERROR_INVALID_HANDLE)
+            {
+                return;
+            }
+
+            HandleDeviceLost($"Win32 error {error}");
+        }
+
+        private void HandleDeviceLost(string reason)
+        {
+            lock (_deviceLock)
+            {
+                if (_deviceLostReported || _deviceHandle == null) return;
+                _deviceLostReported = true;
+            }
+
+            Log($"Device lost ({reason}). Waiting for it to come back...", "Warn");
+            Disconnect();
+            DeviceRemoved?.Invoke();
+        }
 
         private void Log(string msg, string type = "Info")
         {
@@ -298,34 +352,38 @@ namespace MchoseHub.Hardware
                 return false;
             }
 
-            // CRITICAL: The official MCHOSE vendor config interface is ALWAYS UsagePage 0xFF01 (65281)
-            // UsagePage 0xFF0B is auxiliary/macro and rejects feature reports 0x11 and 0x12!
-            HidDeviceInfo? chosen = target;
-            if (chosen == null)
+            // Diagnostic dump: with both the cable and the 2.4G dongle plugged in there are
+            // several interfaces sharing VID/PID families, and picking the wrong one looks
+            // exactly like "the mouse is not detected".
+            App.DebugLog($"[HID] {devices.Count} supported interface(s) found:");
+            foreach (var candidate in devices)
             {
-                chosen = devices.Find(d => d.UsagePage == 0xFF01)
-                         ?? devices.Find(d => d.FeatureReportByteLength >= 64 && d.UsagePage != 0xFF0B)
-                         ?? devices.Find(d => d.FeatureReportByteLength >= 20 && d.UsagePage != 0xFF0B)
-                         ?? devices[0];
+                App.DebugLog($"  - {candidate} | path={candidate.DevicePath}");
             }
 
-            Log($"Opening device interface: {chosen.Product} (VID: 0x{chosen.VendorId:X4}, PID: 0x{chosen.ProductId:X4}, UsagePage: 0x{chosen.UsagePage:X4}, FeatureReportByteLength: {chosen.FeatureReportByteLength})", "Info");
+            // CRITICAL: the official MCHOSE vendor config interface is ALWAYS UsagePage 0xFF01
+            // (65281). UsagePage 0xFF0B is auxiliary/macro and rejects feature reports 0x11/0x12.
+            //
+            // With the cable and the 2.4G dongle both plugged in there are TWO 0xFF01 links
+            // (e.g. PID 0x100B wired + PID 0x4019 dongle). Opening a link proves nothing: the
+            // inactive one still accepts feature requests but answers with empty payloads.
+            // The caller validates the link with a real settings read and tries the next one.
+            HidDeviceInfo? chosen = target
+                ?? devices.Find(d => d.UsagePage == ConfigUsagePage)
+                ?? devices.Find(d => d.FeatureReportByteLength >= 64 && d.UsagePage != 0xFF0B)
+                ?? devices.Find(d => d.FeatureReportByteLength >= 20 && d.UsagePage != 0xFF0B)
+                ?? devices[0];
 
-            var handle = CreateFile(
-                chosen.DevicePath,
-                GENERIC_READ | GENERIC_WRITE,
-                FILE_SHARE_READ | FILE_SHARE_WRITE,
-                IntPtr.Zero,
-                OPEN_EXISTING,
-                FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL,
-                IntPtr.Zero);
-
+            SafeFileHandle? handle = OpenDeviceHandle(chosen);
             if (handle.IsInvalid)
             {
                 int err = Marshal.GetLastWin32Error();
                 Log($"Failed to open device handle (Win32 error: {err})", "Error");
+                handle.Dispose();
                 return false;
             }
+
+            Log($"Opening device interface: {chosen.Product} (VID: 0x{chosen.VendorId:X4}, PID: 0x{chosen.ProductId:X4}, UsagePage: 0x{chosen.UsagePage:X4}, FeatureReportByteLength: {chosen.FeatureReportByteLength})", "Info");
 
             lock (_deviceLock)
             {
@@ -343,12 +401,35 @@ namespace MchoseHub.Hardware
             return true;
         }
 
+        /// <summary>
+        /// Configuration links currently enumerated (wired mouse + 2.4G dongle). Only one of
+        /// them carries live data at any time.
+        /// </summary>
+        public static List<HidDeviceInfo> ConfigCandidates() =>
+            EnumerateDevices().Where(d => d.UsagePage == ConfigUsagePage).ToList();
+
+        /// <summary>
+        /// Number of candidate configuration links currently enumerated (wired mouse + dongle).
+        /// </summary>
+        public static int ConfigInterfaceCount() => ConfigCandidates().Count;
+
+        private SafeFileHandle OpenDeviceHandle(HidDeviceInfo info) =>
+            CreateFile(
+                info.DevicePath,
+                GENERIC_READ | GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                IntPtr.Zero,
+                OPEN_EXISTING,
+                FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL,
+                IntPtr.Zero);
+
         private void StartInputReader(HidDeviceInfo dev)
         {
             try
             {
                 int inLen = dev.InputReportByteLength > 0 ? dev.InputReportByteLength : 64;
                 _readStream = new FileStream(_deviceHandle!, FileAccess.Read, inLen, isAsync: true);
+                var stream = _readStream;
                 _readCts = new CancellationTokenSource();
                 var token = _readCts.Token;
 
@@ -359,7 +440,7 @@ namespace MchoseHub.Hardware
                     {
                         try
                         {
-                            int bytesRead = await _readStream.ReadAsync(buffer.AsMemory(0, inLen), token);
+                            int bytesRead = await stream.ReadAsync(buffer.AsMemory(0, inLen), token);
                             if (bytesRead > 0)
                             {
                                 byte[] report = new byte[bytesRead];
@@ -371,11 +452,17 @@ namespace MchoseHub.Hardware
                         {
                             break;
                         }
+                        catch (ObjectDisposedException)
+                        {
+                            break;
+                        }
                         catch (Exception ex)
                         {
                             if (!token.IsCancellationRequested)
                             {
                                 Log($"Input report stream error: {ex.Message}", "Warn");
+                                // A dead pipe means the mouse/dongle went away; let the UI react.
+                                HandleDeviceLost("input stream closed");
                             }
                             break;
                         }
@@ -404,6 +491,9 @@ namespace MchoseHub.Hardware
             int copyLen = Math.Min(payload.Length, targetLength - 1);
             Array.Copy(payload, 0, buffer, 1, copyLen);
 
+            bool result;
+            int error = 0;
+
             lock (_deviceLock)
             {
                 if (_deviceHandle == null || _deviceHandle.IsInvalid || _deviceHandle.IsClosed)
@@ -415,14 +505,20 @@ namespace MchoseHub.Hardware
                 string hexDump = BitConverter.ToString(buffer).Replace("-", " ");
                 Log($"TX Feature (Report 0x{reportId:X2}, len {buffer.Length}): {hexDump}", "Tx");
 
-                bool result = HidD_SetFeature(_deviceHandle, buffer, buffer.Length);
+                result = HidD_SetFeature(_deviceHandle, buffer, buffer.Length);
                 if (!result)
                 {
-                    int err = Marshal.GetLastWin32Error();
-                    Log($"HidD_SetFeature (Report 0x{reportId:X2}) failed with Win32 error: {err}", "Error");
+                    error = Marshal.GetLastWin32Error();
                 }
-                return result;
             }
+
+            if (!result)
+            {
+                Log($"HidD_SetFeature (Report 0x{reportId:X2}) failed with Win32 error: {error}", "Error");
+                HandleTransferFailure(error);
+            }
+
+            return result;
         }
 
         public byte[]? GetFeatureReport(byte reportId, int expectedLength)
@@ -434,6 +530,9 @@ namespace MchoseHub.Hardware
             Array.Fill<byte>(buffer, 0xFF);
             buffer[0] = reportId;
 
+            bool success;
+            int error = 0;
+
             lock (_deviceLock)
             {
                 if (_deviceHandle == null || _deviceHandle.IsInvalid || _deviceHandle.IsClosed)
@@ -442,13 +541,18 @@ namespace MchoseHub.Hardware
                     return null;
                 }
 
-                bool success = HidD_GetFeature(_deviceHandle, buffer, buffer.Length);
+                success = HidD_GetFeature(_deviceHandle, buffer, buffer.Length);
                 if (!success)
                 {
-                    int err = Marshal.GetLastWin32Error();
-                    Log($"HidD_GetFeature (Report 0x{reportId:X2}) failed with Win32 error: {err}", "Error");
-                    return null;
+                    error = Marshal.GetLastWin32Error();
                 }
+            }
+
+            if (!success)
+            {
+                Log($"HidD_GetFeature (Report 0x{reportId:X2}) failed with Win32 error: {error}", "Error");
+                HandleTransferFailure(error);
+                return null;
             }
 
             string hexDump = BitConverter.ToString(buffer).Replace("-", " ");
@@ -476,6 +580,7 @@ namespace MchoseHub.Hardware
                 _readStream = null;
                 _deviceHandle = null;
                 _currentDeviceInfo = null;
+                _deviceLostReported = false;
             }
 
             try { readCts?.Cancel(); } catch { }
