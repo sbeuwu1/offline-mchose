@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,12 @@ namespace MchoseHub.Hardware
         private readonly object _queueLock = new();
         private bool _isProcessingQueue;
         private readonly CancellationTokenSource _cts = new();
+        private readonly CancellationToken _token;
+
+        // The CTS is never disposed: the worker can still race a Dispose() call and would
+        // otherwise hit ObjectDisposedException on _cts.Token. A CTS without timers owns no
+        // unmanaged resources, so leaving it alive is the safer trade-off.
+        private volatile bool _disposed;
 
         public event Action<string, string>? LogMessage;
         public event Action<string>? StatusChanged;
@@ -27,9 +34,26 @@ namespace MchoseHub.Hardware
         {
             _hid = hid;
             _state = state;
+            _token = _cts.Token;
 
             _hid.InputReportReceived += OnInputReportReceived;
             _hid.LogMessage += (msg, type) => Log(msg, type);
+        }
+
+        public bool IsDisposed => _disposed;
+
+        /// <summary>
+        /// Number of commands waiting in the queue plus the one currently being executed.
+        /// </summary>
+        public int PendingCount
+        {
+            get
+            {
+                lock (_queueLock)
+                {
+                    return _queue.Count + (_isProcessingQueue ? 1 : 0);
+                }
+            }
         }
 
         private class CommandTask
@@ -41,6 +65,11 @@ namespace MchoseHub.Hardware
 
         private Task EnqueueCommand(Func<Task> action, string tag = "")
         {
+            if (_disposed)
+            {
+                return Task.CompletedTask;
+            }
+
             var task = new CommandTask { Tag = tag, Action = action };
 
             lock (_queueLock)
@@ -71,40 +100,108 @@ namespace MchoseHub.Hardware
                 _isProcessingQueue = true;
             }
 
-            while (true)
+            try
             {
-                CommandTask? current;
-                lock (_queueLock)
+                while (true)
                 {
-                    if (_queue.Count == 0)
+                    CommandTask? current;
+                    lock (_queueLock)
                     {
-                        _isProcessingQueue = false;
-                        StatusChanged?.Invoke(_state.ProductName);
+                        if (_queue.Count == 0)
+                        {
+                            _isProcessingQueue = false;
+                            break;
+                        }
+                        current = _queue[0];
+                        _queue.RemoveAt(0);
+                    }
+
+                    if (!string.IsNullOrEmpty(current.Tag) && !current.Tag.StartsWith("read", StringComparison.OrdinalIgnoreCase))
+                    {
+                        StatusChanged?.Invoke("Syncing...");
+                    }
+
+                    try
+                    {
+                        await current.Action().ConfigureAwait(false);
+                        current.Tcs.TrySetResult(true);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Shutdown in progress: don't report this as a device error.
+                        current.Tcs.TrySetCanceled();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"Command error [{current.Tag}]: {ex.Message}", "Error");
+                        current.Tcs.TrySetException(ex);
+                    }
+
+                    try
+                    {
+                        // 75ms guard delay: prevents MCU flash write stalls and RF pipeline stutter
+                        await Task.Delay(75, _token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
                         break;
                     }
-                    current = _queue[0];
-                    _queue.RemoveAt(0);
                 }
-
-                if (!string.IsNullOrEmpty(current.Tag) && !current.Tag.StartsWith("read", StringComparison.OrdinalIgnoreCase))
-                {
-                    StatusChanged?.Invoke("Syncing...");
-                }
-
-                try
-                {
-                    await current.Action();
-                    current.Tcs.TrySetResult(true);
-                }
-                catch (Exception ex)
-                {
-                    Log($"Command error [{current.Tag}]: {ex.Message}", "Error");
-                    current.Tcs.TrySetException(ex);
-                }
-
-                // 75ms guard delay: prevents MCU flash write stalls and RF pipeline stutter
-                await Task.Delay(75, _cts.Token);
             }
+            finally
+            {
+                bool restart;
+                lock (_queueLock)
+                {
+                    _isProcessingQueue = false;
+                    restart = !_disposed && _queue.Count > 0;
+                }
+
+                if (_disposed)
+                {
+                    DrainQueue();
+                }
+                else if (restart)
+                {
+                    _ = ProcessQueueAsync();
+                }
+                else
+                {
+                    StatusChanged?.Invoke(_state.ProductName);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Completes every queued command as canceled so callers awaiting them never hang.
+        /// </summary>
+        private void DrainQueue()
+        {
+            List<CommandTask> remaining;
+            lock (_queueLock)
+            {
+                remaining = new List<CommandTask>(_queue);
+                _queue.Clear();
+            }
+
+            foreach (var pending in remaining)
+            {
+                pending.Tcs.TrySetCanceled();
+            }
+        }
+
+        /// <summary>
+        /// Waits until the command queue is empty (used on shutdown so the last change still
+        /// reaches the mouse's onboard flash). Returns false if the timeout expired first.
+        /// </summary>
+        public async Task<bool> FlushAsync(TimeSpan timeout)
+        {
+            var elapsed = Stopwatch.StartNew();
+            while (!_disposed && PendingCount > 0 && elapsed.Elapsed < timeout)
+            {
+                await Task.Delay(25).ConfigureAwait(false);
+            }
+            return PendingCount == 0;
         }
 
         private static byte[] Invert(byte[] data)
@@ -162,11 +259,11 @@ namespace MchoseHub.Hardware
                     if (!sendOk)
                     {
                         Log($"Query for report 0x{reportId:X2} cmd 0x{commandByte:X2} failed (attempt {attempt + 1}).", "Warn");
-                        await Task.Delay(50, _cts.Token);
+                        await Task.Delay(50, _token);
                         continue;
                     }
 
-                    await Task.Delay(80, _cts.Token);
+                    await Task.Delay(80, _token);
 
                     byte[]? raw = _hid.GetFeatureReport(reportId, totalLength);
                     if (raw != null && raw.Length > 2)
@@ -190,7 +287,7 @@ namespace MchoseHub.Hardware
                         }
                     }
 
-                    await Task.Delay(60, _cts.Token);
+                    await Task.Delay(60, _token);
                 }
             }, tag);
 
@@ -231,6 +328,8 @@ namespace MchoseHub.Hardware
 
         public async Task ReadAllSettingsAsync()
         {
+            if (_disposed) return;
+
             try
             {
                 Log("Querying mouse onboard settings (Report 0x12 0x67)...", "Info");
@@ -264,8 +363,6 @@ namespace MchoseHub.Hardware
                     int usbDpi = byte2 & 0x0F;
                     int usbRate = (byte2 >> 4) & 0x0F;
 
-                    bool isWired = (_state.ProductId == 0x4019 || _state.ProductId == 0x4021 || _state.ProductId == 0x4008 || _state.ProductId == 0x100B);
-                    
                     // Unified Polling Rate detection:
                     // If usbRate and gRate both have valid indices (0..5):
                     int activeRate = _state.RateIndex;
@@ -406,6 +503,8 @@ namespace MchoseHub.Hardware
 
         public async Task ReadBatteryAsync()
         {
+            if (_disposed) return;
+
             try
             {
                 Log("Querying battery status (Report 0x11 0x06)...", "Info");
@@ -433,6 +532,8 @@ namespace MchoseHub.Hardware
 
         public async Task ApplyPollingRateAsync(int rateIndex)
         {
+            if (_disposed) return;
+
             _state.RateIndex = rateIndex;
             if (!_hid.IsConnected) return;
 
@@ -446,7 +547,7 @@ namespace MchoseHub.Hardware
 
         public async Task ApplySensorAndModeAsync()
         {
-            if (!_hid.IsConnected) return;
+            if (_disposed || !_hid.IsConnected) return;
 
             byte lod = (byte)_state.LodIndex;
             byte ripple = (byte)(_state.Ripple ? 1 : 2);
@@ -466,7 +567,7 @@ namespace MchoseHub.Hardware
 
         public async Task ApplyDpiAsync()
         {
-            if (!_hid.IsConnected) return;
+            if (_disposed || !_hid.IsConnected) return;
 
             int activeIdx = Math.Min(_state.ActiveDpiIndex, _state.NumLevels - 1);
             Log($"Writing DPI stages: {string.Join(", ", _state.DpiStages.Take(_state.NumLevels))} (Active: Stage {activeIdx + 1})...", "Info");
@@ -502,6 +603,8 @@ namespace MchoseHub.Hardware
 
         public async Task ApplyDebounceAsync(int ms)
         {
+            if (_disposed) return;
+
             _state.DebounceMs = ms;
             if (!_hid.IsConnected) return;
 
@@ -513,6 +616,8 @@ namespace MchoseHub.Hardware
 
         public async Task ApplySleepAsync(int minutes, bool never)
         {
+            if (_disposed) return;
+
             _state.SleepMinutes = minutes;
             _state.NeverSleep = never;
             if (!_hid.IsConnected) return;
@@ -528,8 +633,17 @@ namespace MchoseHub.Hardware
 
         public void Dispose()
         {
-            _cts.Cancel();
-            _cts.Dispose();
+            if (_disposed) return;
+            _disposed = true;
+
+            // Stop feeding device events into a window that is going away.
+            _hid.InputReportReceived -= OnInputReportReceived;
+
+            try { _cts.Cancel(); } catch { }
+
+            // Release anyone still awaiting a queued command; otherwise closing the window
+            // leaves dangling continuations that never complete.
+            DrainQueue();
         }
     }
 }

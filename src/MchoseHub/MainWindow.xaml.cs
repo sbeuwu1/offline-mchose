@@ -31,6 +31,8 @@ namespace MchoseHub
 
         private bool _isUpdatingUI = true;
         private bool _isInitialized;
+        private bool _shutdownStarted;
+        private bool _shutdownCompleted;
 
         [DllImport("dwmapi.dll", PreserveSig = true)]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
@@ -50,28 +52,28 @@ namespace MchoseHub
             _sensorDebounceTimer.Tick += async (s, e) =>
             {
                 _sensorDebounceTimer.Stop();
-                await _protocol.ApplySensorAndModeAsync();
+                await SafeApplyAsync(_protocol.ApplySensorAndModeAsync);
             };
 
             _dpiDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
             _dpiDebounceTimer.Tick += async (s, e) =>
             {
                 _dpiDebounceTimer.Stop();
-                await _protocol.ApplyDpiAsync();
+                await SafeApplyAsync(_protocol.ApplyDpiAsync);
             };
 
             _debounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
             _debounceTimer.Tick += async (s, e) =>
             {
                 _debounceTimer.Stop();
-                await _protocol.ApplyDebounceAsync(_state.DebounceMs);
+                await SafeApplyAsync(() => _protocol.ApplyDebounceAsync(_state.DebounceMs));
             };
 
             _sleepDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
             _sleepDebounceTimer.Tick += async (s, e) =>
             {
                 _sleepDebounceTimer.Stop();
-                await _protocol.ApplySleepAsync(_state.SleepMinutes, _state.NeverSleep);
+                await SafeApplyAsync(() => _protocol.ApplySleepAsync(_state.SleepMinutes, _state.NeverSleep));
             };
 
             InitializeComponent();
@@ -129,15 +131,78 @@ namespace MchoseHub
 
         private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (_shutdownCompleted)
+            {
+                return;
+            }
+
+            // Keep the window alive until pending HID writes reach the mouse, then close for real.
+            e.Cancel = true;
+
+            if (_shutdownStarted)
+            {
+                return;
+            }
+
+            _shutdownStarted = true;
+            StopAllTimers();
+            App.DebugLog("MainWindow_Closing: flushing pending HID commands...");
+
+            _ = FinishShutdownAsync();
+        }
+
+        private async Task FinishShutdownAsync()
+        {
+            try
+            {
+                bool flushed = await _protocol.FlushAsync(TimeSpan.FromSeconds(3));
+                App.DebugLog(flushed
+                    ? "MainWindow_Closing: command queue drained."
+                    : "MainWindow_Closing: command queue did not drain within 3s.");
+            }
+            catch (Exception ex)
+            {
+                App.DebugLog($"MainWindow_Closing: flush failed: {ex.Message}");
+            }
+
             App.DebugLog("MainWindow_Closing: disposing resources...");
             _protocol.Dispose();
             _hid.Dispose();
+            App.FlushLog();
+
+            _shutdownCompleted = true;
+            // Closing re-entrantly from inside the Closing handler is not allowed; defer it.
+            _ = Dispatcher.BeginInvoke(new Action(Close));
+        }
+
+        private void StopAllTimers()
+        {
+            _sensorDebounceTimer.Stop();
+            _dpiDebounceTimer.Stop();
+            _debounceTimer.Stop();
+            _sleepDebounceTimer.Stop();
+        }
+
+        private static async Task SafeApplyAsync(Func<Task> action)
+        {
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                // Never let a cancelled/failed background write surface as an error dialog.
+                App.DebugLog($"Background apply failed: {ex.Message}");
+            }
         }
 
         private void OnLogMessage(string message, string typeStr)
         {
             App.DebugLog($"[{typeStr}] {message}");
-            Dispatcher.Invoke(() =>
+
+            // HID callbacks come from a background reader thread and must never block on the
+            // UI thread (deadlock on shutdown / busy window).
+            RunOnUi(() =>
             {
                 if (!Enum.TryParse(typeStr, true, out LogType type))
                 {
@@ -147,13 +212,34 @@ namespace MchoseHub
                 _logEntries.Add(new LogEntry { Type = type, Message = message });
 
                 // Keep log capped at 500 lines
-                if (_logEntries.Count > 500)
+                while (_logEntries.Count > 500)
                 {
                     _logEntries.RemoveAt(0);
                 }
 
-                logScrollViewer.ScrollToEnd();
+                logScrollViewer?.ScrollToEnd();
             });
+        }
+
+        private void RunOnUi(Action action)
+        {
+            var dispatcher = Dispatcher;
+            if (dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
+            {
+                return;
+            }
+
+            try
+            {
+                _ = dispatcher.InvokeAsync(action);
+            }
+            catch (InvalidOperationException)
+            {
+                // Dispatcher started shutting down between the check and the dispatch.
+            }
+            catch (TaskCanceledException)
+            {
+            }
         }
 
         private void Log(string message, LogType type = LogType.Info)
@@ -163,9 +249,12 @@ namespace MchoseHub
 
         private void OnStatusChanged(string status)
         {
-            Dispatcher.Invoke(() =>
+            RunOnUi(() =>
             {
-                statusText.Text = status;
+                if (statusText != null)
+                {
+                    statusText.Text = status;
+                }
             });
         }
 
@@ -173,7 +262,18 @@ namespace MchoseHub
         {
             Log("Searching for MCHOSE USB / 2.4G mouse hardware...", LogType.Info);
             App.DebugLog("TryConnectAsync: scanning HID devices in background...");
-            bool connected = await Task.Run(() => _hid.Connect());
+
+            bool connected = false;
+            try
+            {
+                connected = await Task.Run(() => _hid.Connect());
+            }
+            catch (Exception ex)
+            {
+                App.DebugLog($"TryConnectAsync: HID enumeration failed: {ex}");
+                Log($"Device scan failed: {ex.Message}", LogType.Error);
+            }
+
             App.DebugLog($"TryConnectAsync: connected={connected}");
 
             if (connected && _hid.CurrentDevice != null)

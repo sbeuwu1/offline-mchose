@@ -149,7 +149,20 @@ namespace MchoseHub.Hardware
         private CancellationTokenSource? _readCts;
         private HidDeviceInfo? _currentDeviceInfo;
 
-        public bool IsConnected => _deviceHandle != null && !_deviceHandle.IsInvalid && !_deviceHandle.IsClosed;
+        // Guards the native handle against UI-thread Disconnect() racing the protocol worker.
+        private readonly object _deviceLock = new();
+        private bool _disposed;
+
+        public bool IsConnected
+        {
+            get
+            {
+                lock (_deviceLock)
+                {
+                    return _deviceHandle != null && !_deviceHandle.IsInvalid && !_deviceHandle.IsClosed;
+                }
+            }
+        }
         public HidDeviceInfo? CurrentDevice => _currentDeviceInfo;
 
         public event Action<byte[]>? InputReportReceived;
@@ -274,6 +287,8 @@ namespace MchoseHub.Hardware
 
         public bool Connect(HidDeviceInfo? target = null)
         {
+            if (_disposed) return false;
+
             Disconnect();
 
             var devices = EnumerateDevices();
@@ -312,9 +327,17 @@ namespace MchoseHub.Hardware
                 return false;
             }
 
-            _deviceHandle = handle;
-            _currentDeviceInfo = chosen;
+            lock (_deviceLock)
+            {
+                if (_disposed)
+                {
+                    handle.Dispose();
+                    return false;
+                }
 
+                _deviceHandle = handle;
+                _currentDeviceInfo = chosen;
+            }
             StartInputReader(chosen);
             Log($"Successfully connected to {chosen.Product}!", "Info");
             return true;
@@ -367,12 +390,6 @@ namespace MchoseHub.Hardware
 
         public bool SendFeatureReport(byte reportId, byte[] payload)
         {
-            if (!IsConnected || _deviceHandle == null)
-            {
-                Log("Cannot send feature report: device disconnected.", "Error");
-                return false;
-            }
-
             // Windows HidD_SetFeature requires 1 byte Report ID + payload bytes
             // In MCHOSE HID descriptor:
             // Report 0x11 has 20 data bytes -> buffer length is 21 bytes
@@ -387,26 +404,29 @@ namespace MchoseHub.Hardware
             int copyLen = Math.Min(payload.Length, targetLength - 1);
             Array.Copy(payload, 0, buffer, 1, copyLen);
 
-            string hexDump = BitConverter.ToString(buffer).Replace("-", " ");
-            Log($"TX Feature (Report 0x{reportId:X2}, len {buffer.Length}): {hexDump}", "Tx");
-
-            bool result = HidD_SetFeature(_deviceHandle, buffer, buffer.Length);
-            if (!result)
+            lock (_deviceLock)
             {
-                int err = Marshal.GetLastWin32Error();
-                Log($"HidD_SetFeature (Report 0x{reportId:X2}) failed with Win32 error: {err}", "Error");
+                if (_deviceHandle == null || _deviceHandle.IsInvalid || _deviceHandle.IsClosed)
+                {
+                    Log("Cannot send feature report: device disconnected.", "Error");
+                    return false;
+                }
+
+                string hexDump = BitConverter.ToString(buffer).Replace("-", " ");
+                Log($"TX Feature (Report 0x{reportId:X2}, len {buffer.Length}): {hexDump}", "Tx");
+
+                bool result = HidD_SetFeature(_deviceHandle, buffer, buffer.Length);
+                if (!result)
+                {
+                    int err = Marshal.GetLastWin32Error();
+                    Log($"HidD_SetFeature (Report 0x{reportId:X2}) failed with Win32 error: {err}", "Error");
+                }
+                return result;
             }
-            return result;
         }
 
         public byte[]? GetFeatureReport(byte reportId, int expectedLength)
         {
-            if (!IsConnected || _deviceHandle == null)
-            {
-                Log("Cannot get feature report: device disconnected.", "Error");
-                return null;
-            }
-
             int targetLength = (reportId == 0x11) ? 21 : 65;
             if (expectedLength + 1 > targetLength) targetLength = expectedLength + 1;
 
@@ -414,12 +434,21 @@ namespace MchoseHub.Hardware
             Array.Fill<byte>(buffer, 0xFF);
             buffer[0] = reportId;
 
-            bool success = HidD_GetFeature(_deviceHandle, buffer, buffer.Length);
-            if (!success)
+            lock (_deviceLock)
             {
-                int err = Marshal.GetLastWin32Error();
-                Log($"HidD_GetFeature (Report 0x{reportId:X2}) failed with Win32 error: {err}", "Error");
-                return null;
+                if (_deviceHandle == null || _deviceHandle.IsInvalid || _deviceHandle.IsClosed)
+                {
+                    Log("Cannot get feature report: device disconnected.", "Error");
+                    return null;
+                }
+
+                bool success = HidD_GetFeature(_deviceHandle, buffer, buffer.Length);
+                if (!success)
+                {
+                    int err = Marshal.GetLastWin32Error();
+                    Log($"HidD_GetFeature (Report 0x{reportId:X2}) failed with Win32 error: {err}", "Error");
+                    return null;
+                }
             }
 
             string hexDump = BitConverter.ToString(buffer).Replace("-", " ");
@@ -433,33 +462,32 @@ namespace MchoseHub.Hardware
 
         public void Disconnect()
         {
-            try
+            CancellationTokenSource? readCts;
+            FileStream? readStream;
+            SafeFileHandle? handle;
+
+            lock (_deviceLock)
             {
-                _readCts?.Cancel();
-                _readCts?.Dispose();
+                readCts = _readCts;
+                readStream = _readStream;
+                handle = _deviceHandle;
+
                 _readCts = null;
-            }
-            catch { }
-
-            try
-            {
-                _readStream?.Dispose();
                 _readStream = null;
-            }
-            catch { }
-
-            try
-            {
-                _deviceHandle?.Dispose();
                 _deviceHandle = null;
+                _currentDeviceInfo = null;
             }
-            catch { }
 
-            _currentDeviceInfo = null;
+            try { readCts?.Cancel(); } catch { }
+            try { readCts?.Dispose(); } catch { }
+            try { readStream?.Dispose(); } catch { }
+            try { handle?.Dispose(); } catch { }
         }
 
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
             Disconnect();
         }
     }
