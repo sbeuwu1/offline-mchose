@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Windows;
+using MchoseHub.Localization;
 
 namespace MchoseHub
 {
@@ -88,7 +89,9 @@ namespace MchoseHub
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            DebugLog($"App.OnStartup: Starting (log file: {LogPath})...");
+            // Pick the UI language before any window is parsed: XAML resolves loc:Tr at load time.
+            Loc.Initialize(e.Args);
+            DebugLog($"App.OnStartup: Starting (log file: {LogPath}, language: {Loc.Language})...");
 
             AppDomain.CurrentDomain.UnhandledException += (s, args) =>
             {

@@ -56,6 +56,21 @@ Offline Mchose communicates directly with your mouse and 2.4G wireless dongle vi
 
 ---
 
+## Language
+
+The interface ships in English and Russian. The app follows the Windows display language
+(Russian → Russian UI, anything else → English). You can force a language from the command line:
+
+```powershell
+MchoseHub.exe --lang ru
+MchoseHub.exe --lang en
+```
+
+Only the interface is localized. The diagnostic log and HID packet dumps stay in English so that
+bug reports remain consistent.
+
+---
+
 ## Protocol Documentation
 
 Detailed reverse-engineered HID packet formats, register maps, and checksum specifications are documented in [REVERSE_ENGINEERING_MCHOSE.md](REVERSE_ENGINEERING_MCHOSE.md).

@@ -8,6 +8,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using MchoseHub.Hardware;
+using MchoseHub.Localization;
 
 namespace MchoseHub
 {
@@ -260,9 +261,9 @@ namespace MchoseHub
         {
             _rawInput.ResetClicks();
             txtClickCount.Text = "0";
-            txtLastInterval.Text = "-- ms";
+            txtLastInterval.Text = Loc.T("Tester_IntervalEmpty");
             txtDoubleClickCount.Text = "0";
-            txtClickFeedback.Text = "Ready to test clicks";
+            txtClickFeedback.Text = Loc.T("Tester_Ready");
             txtClickFeedback.Foreground = BrushLightMuted;
             statusBanner.Background = BrushIdleBg;
         }
@@ -276,98 +277,98 @@ namespace MchoseHub
 
             trailCanvas.ClearDots();
 
-            txtCurrentHz.Text = "0 Hz";
-            txtPeakHz.Text = "0 Hz";
-            txtAvgHz.Text = "0 Hz";
-            txtTargetStatus.Text = "IDLE";
-            txtRateTier.Text = "MOVE MOUSE TO TEST";
+            txtCurrentHz.Text = Loc.T("Unit_ZeroHz");
+            txtPeakHz.Text = Loc.T("Unit_ZeroHz");
+            txtAvgHz.Text = Loc.T("Unit_ZeroHz");
+            txtTargetStatus.Text = Loc.T("Tester_Idle");
+            txtRateTier.Text = Loc.T("Tester_MoveToTest");
             rateTierBadge.BorderBrush = BrushBorderIdle;
 
             txtClickCount.Text = "0";
-            txtLastInterval.Text = "-- ms";
+            txtLastInterval.Text = Loc.T("Tester_IntervalEmpty");
             txtDoubleClickCount.Text = "0";
-            txtClickFeedback.Text = "Ready to test clicks";
+            txtClickFeedback.Text = Loc.T("Tester_Ready");
             txtClickFeedback.Foreground = BrushLightMuted;
             statusBanner.Background = BrushIdleBg;
         }
 
         private void UpdateHzDisplay(int currentHz, int peakHz, int avgHz)
         {
-            txtCurrentHz.Text = $"{currentHz} Hz";
-            txtPeakHz.Text = $"{peakHz} Hz";
-            txtAvgHz.Text = $"{avgHz} Hz";
+            txtCurrentHz.Text = Loc.F("Tester_RateValueFmt", currentHz);
+            txtPeakHz.Text = Loc.F("Tester_RateValueFmt", peakHz);
+            txtAvgHz.Text = Loc.F("Tester_RateValueFmt", avgHz);
 
             if (currentHz >= 9000)
             {
-                txtRateTier.Text = "10000 Hz (10K)";
+                txtRateTier.Text = Loc.T("Tester_Tier10K");
                 txtRateTier.Foreground = BrushEmerald;
                 rateTierBadge.BorderBrush = BrushEmerald;
             }
             else if (currentHz >= 6800)
             {
-                txtRateTier.Text = "8000 Hz (8K)";
+                txtRateTier.Text = Loc.T("Tester_Tier8K");
                 txtRateTier.Foreground = BrushGreen;
                 rateTierBadge.BorderBrush = BrushGreen;
             }
             else if (currentHz >= 3400)
             {
-                txtRateTier.Text = "4000 Hz (4K)";
+                txtRateTier.Text = Loc.T("Tester_Tier4K");
                 txtRateTier.Foreground = BrushSky;
                 rateTierBadge.BorderBrush = BrushSky;
             }
             else if (currentHz >= 1700)
             {
-                txtRateTier.Text = "2000 Hz (2K)";
+                txtRateTier.Text = Loc.T("Tester_Tier2K");
                 txtRateTier.Foreground = BrushPurple;
                 rateTierBadge.BorderBrush = BrushPurpleDark;
             }
             else if (currentHz >= 800)
             {
-                txtRateTier.Text = "1000 Hz (1K)";
+                txtRateTier.Text = Loc.T("Tester_Tier1K");
                 txtRateTier.Foreground = BrushPurpleDark;
                 rateTierBadge.BorderBrush = BrushViolet;
             }
             else if (currentHz > 0)
             {
-                txtRateTier.Text = $"{currentHz} Hz";
+                txtRateTier.Text = Loc.F("Tester_RateValueFmt", currentHz);
                 txtRateTier.Foreground = BrushLightMuted;
                 rateTierBadge.BorderBrush = BrushBorderIdle;
             }
             else
             {
-                txtRateTier.Text = "MOVE MOUSE TO TEST";
+                txtRateTier.Text = Loc.T("Tester_MoveToTest");
                 txtRateTier.Foreground = BrushMuted;
                 rateTierBadge.BorderBrush = BrushBorderIdle;
             }
 
             if (peakHz >= 9000)
             {
-                txtTargetStatus.Text = "10K ULTRA";
+                txtTargetStatus.Text = Loc.T("Tester_Status10K");
                 txtTargetStatus.Foreground = BrushEmerald;
             }
             else if (peakHz >= 6800)
             {
-                txtTargetStatus.Text = "8K ULTRA";
+                txtTargetStatus.Text = Loc.T("Tester_Status8K");
                 txtTargetStatus.Foreground = BrushGreen;
             }
             else if (peakHz >= 3400)
             {
-                txtTargetStatus.Text = "4K";
+                txtTargetStatus.Text = Loc.T("Tester_Status4K");
                 txtTargetStatus.Foreground = BrushSky;
             }
             else if (peakHz >= 1700)
             {
-                txtTargetStatus.Text = "2K";
+                txtTargetStatus.Text = Loc.T("Tester_Status2K");
                 txtTargetStatus.Foreground = BrushPurple;
             }
             else if (peakHz >= 800)
             {
-                txtTargetStatus.Text = "1K";
+                txtTargetStatus.Text = Loc.T("Tester_Status1K");
                 txtTargetStatus.Foreground = BrushPurpleDark;
             }
             else if (peakHz > 0)
             {
-                txtTargetStatus.Text = "ACTIVE";
+                txtTargetStatus.Text = Loc.T("Tester_StatusActive");
                 txtTargetStatus.Foreground = BrushLightMuted;
             }
         }
@@ -376,34 +377,45 @@ namespace MchoseHub
         {
             Dispatcher.BeginInvoke(() =>
             {
+                string button = LocalizedButtonName(btnName);
                 txtClickCount.Text = _rawInput.ClickCount.ToString();
                 txtDoubleClickCount.Text = _rawInput.DoubleClickCount.ToString();
 
                 if (intervalMs > 0)
                 {
-                    txtLastInterval.Text = $"{intervalMs:F1} ms";
+                    txtLastInterval.Text = Loc.F("Tester_IntervalValueFmt", intervalMs);
                     if (isFastOrDouble)
                     {
-                        txtClickFeedback.Text = $"⚠️ Double-click detected ({btnName} • {intervalMs:F1}ms)";
+                        txtClickFeedback.Text = Loc.F("Tester_DoubleClickFmt", button, intervalMs);
                         txtClickFeedback.Foreground = BrushRed;
                         statusBanner.Background = BrushRedBg;
                     }
                     else
                     {
-                        txtClickFeedback.Text = $"Click ({btnName} • {intervalMs:F1}ms)";
+                        txtClickFeedback.Text = Loc.F("Tester_ClickFmt", button, intervalMs);
                         txtClickFeedback.Foreground = BrushPurple;
                         statusBanner.Background = BrushIdleBg;
                     }
                 }
                 else
                 {
-                    txtLastInterval.Text = "-- ms";
-                    txtClickFeedback.Text = $"Click ({btnName})";
+                    txtLastInterval.Text = Loc.T("Tester_IntervalEmpty");
+                    txtClickFeedback.Text = Loc.F("Tester_ClickNoIntervalFmt", button);
                     txtClickFeedback.Foreground = BrushPurple;
                     statusBanner.Background = BrushIdleBg;
                 }
             });
         }
+
+        private static string LocalizedButtonName(string btnName) => btnName switch
+        {
+            "Left" => Loc.T("Tester_Btn_Left"),
+            "Middle" => Loc.T("Tester_Btn_Middle"),
+            "Right" => Loc.T("Tester_Btn_Right"),
+            "Side1" => Loc.T("Tester_Btn_Side1"),
+            "Side2" => Loc.T("Tester_Btn_Side2"),
+            _ => btnName
+        };
 
         private void OnButtonStateChanged(string btnName, bool isPressed)
         {

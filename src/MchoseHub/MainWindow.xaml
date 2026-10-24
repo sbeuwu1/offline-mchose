@@ -1,5 +1,6 @@
 <Window x:Class="MchoseHub.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:loc="clr-namespace:MchoseHub.Localization"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -158,14 +159,14 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                        <TextBlock Text="Device Settings &amp; Diagnostics" FontSize="11" Foreground="{StaticResource BrushTextMuted}"/>
+                        <TextBlock Text="{loc:Tr Mw_Subtitle}" FontSize="11" Foreground="{StaticResource BrushTextMuted}"/>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Actions & Status -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- Top Fullscreen Tester Launcher Button -->
-                    <Button Content="Hardware Tester [F8]" Click="BtnLaunchTester_Click" ToolTip="Open Fullscreen Hardware Tester (F8)"
+                    <Button Content="{loc:Tr Mw_TesterButton}" Click="BtnLaunchTester_Click" ToolTip="{loc:Tr Mw_TesterTooltip}"
                             Background="#2E1A5E" Foreground="#C084FC"
                             FontWeight="Bold" FontSize="12" Padding="14,7" Cursor="Hand" BorderThickness="0" Margin="0,0,12,0">
                         <Button.Resources>
@@ -179,13 +180,13 @@
                     <Border Background="#170E2F" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="20" Padding="14,5" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Ellipse x:Name="statusDot" Width="8" Height="8" Fill="#EF4444" Margin="0,0,8,0"/>
-                            <TextBlock x:Name="statusText" Text="Disconnected" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource BrushText}"/>
+                            <TextBlock x:Name="statusText" Text="{loc:Tr Status_Disconnected}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource BrushText}"/>
                             <TextBlock x:Name="batteryBadge" Text="" FontSize="12" FontWeight="Bold" Foreground="{StaticResource BrushAccent}" Margin="8,0,0,0" Visibility="Collapsed"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Connect / Disconnect Button -->
-                    <Button x:Name="btnConnect" Content="Connect Mouse" Click="BtnConnect_Click"
+                    <Button x:Name="btnConnect" Content="{loc:Tr Btn_Connect}" Click="BtnConnect_Click"
                             Background="{StaticResource BrushPrimary}" Foreground="#FFFFFF" FontWeight="Bold" FontSize="12"
                             Padding="16,7" Cursor="Hand" BorderThickness="0">
                         <Button.Resources>
@@ -251,15 +252,15 @@
                                     </StackPanel>
                                     <WrapPanel Margin="0,2,0,0">
                                         <TextBlock Text="PAW3950 Ultra" FontSize="11" Foreground="{StaticResource BrushTextMuted}" Margin="0,0,10,0"/>
-                                        <TextBlock Text="•  Up to 8,000 Hz" FontSize="11" Foreground="{StaticResource BrushTextMuted}" Margin="0,0,10,0"/>
-                                        <TextBlock Text="•  Up to 42,000 DPI" FontSize="11" Foreground="{StaticResource BrushTextMuted}"/>
+                                        <TextBlock Text="{loc:Tr Hero_UpToHz}" FontSize="11" Foreground="{StaticResource BrushTextMuted}" Margin="0,0,10,0"/>
+                                        <TextBlock Text="{loc:Tr Hero_UpToDpi}" FontSize="11" Foreground="{StaticResource BrushTextMuted}"/>
                                     </WrapPanel>
                                 </StackPanel>
 
                                 <!-- Real-time Battery Status Card -->
                                 <Border Grid.Column="2" Background="#120B24" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="8" Padding="12,8" VerticalAlignment="Center">
                                     <StackPanel HorizontalAlignment="Right">
-                                        <TextBlock Text="BATTERY" FontSize="9" FontWeight="Bold" Foreground="{StaticResource BrushTextMuted}" Margin="0,0,0,2" HorizontalAlignment="Right"/>
+                                        <TextBlock Text="{loc:Tr Hero_Battery}" FontSize="9" FontWeight="Bold" Foreground="{StaticResource BrushTextMuted}" Margin="0,0,0,2" HorizontalAlignment="Right"/>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                                             <TextBlock x:Name="heroBatteryText" Text="--%" FontSize="18" FontWeight="Black" FontFamily="Consolas, monospace" Foreground="{StaticResource BrushAccent}" Margin="0,0,6,0"/>
                                             <Border Width="30" Height="16" BorderBrush="#3B2275" BorderThickness="1.5" CornerRadius="3" Padding="2" VerticalAlignment="Center">
@@ -278,11 +279,11 @@
                             <StackPanel>
                                 <Grid Margin="0,0,0,8">
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Performance Mode" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}"/>
-                                        <TextBlock Text="Select sensor power curve and responsiveness" FontSize="11" Foreground="{StaticResource BrushTextMuted}"/>
+                                        <TextBlock Text="{loc:Tr Mode_Title}" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}"/>
+                                        <TextBlock Text="{loc:Tr Mode_Subtitle}" FontSize="11" Foreground="{StaticResource BrushTextMuted}"/>
                                     </StackPanel>
                                     <Border HorizontalAlignment="Right" Background="#1E293B" CornerRadius="6" Padding="8,3" VerticalAlignment="Center">
-                                        <TextBlock x:Name="activeModeBadge" Text="Gaming Mode" FontSize="11" FontWeight="Bold" Foreground="{StaticResource BrushAccent}"/>
+                                        <TextBlock x:Name="activeModeBadge" Text="{loc:Tr Mode_Gaming}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource BrushAccent}"/>
                                     </Border>
                                 </Grid>
 
@@ -298,27 +299,27 @@
 
                                     <Button x:Name="btnMode1" Grid.Column="0" Style="{StaticResource ModeCardButton}" Click="BtnMode_Click" Tag="1">
                                         <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="Performance" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Eco / Balanced" FontSize="10" Foreground="{StaticResource BrushTextMuted}" Margin="0,2,0,0" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Tr Mode_Performance}" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Tr Mode_PerformanceSub}" FontSize="10" Foreground="{StaticResource BrushTextMuted}" Margin="0,2,0,0" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
 
                                     <Button x:Name="btnMode2" Grid.Column="2" Style="{StaticResource ModeCardButton}" Click="BtnMode_Click" Tag="2">
                                         <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="Gaming Mode" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Recommended" FontSize="10" Foreground="{StaticResource BrushTextMuted}" Margin="0,2,0,0" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Tr Mode_Gaming}" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Tr Mode_GamingSub}" FontSize="10" Foreground="{StaticResource BrushTextMuted}" Margin="0,2,0,0" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
 
                                     <Button x:Name="btnMode3" Grid.Column="4" Style="{StaticResource ModeCardButton}" Click="BtnMode_Click" Tag="3">
                                         <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="Extreme Mode" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Max Response" FontSize="10" Foreground="{StaticResource BrushTextMuted}" Margin="0,2,0,0" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Tr Mode_Extreme}" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Tr Mode_ExtremeSub}" FontSize="10" Foreground="{StaticResource BrushTextMuted}" Margin="0,2,0,0" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
                                 </Grid>
 
-                                <TextBlock x:Name="modeDescText" Text="Gaming Mode: Faster response, optimal for fast-paced gaming."
+                                <TextBlock x:Name="modeDescText" Text="{loc:Tr Mode_Desc_Gaming}"
                                            FontSize="10" Foreground="{StaticResource BrushTextMuted}" Margin="0,6,0,0"/>
                             </StackPanel>
                         </Border>
@@ -328,11 +329,11 @@
                             <StackPanel>
                                 <Grid Margin="0,0,0,8">
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Polling Rate" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}"/>
-                                        <TextBlock Text="Set mouse hardware reporting rate" FontSize="11" Foreground="{StaticResource BrushTextMuted}"/>
+                                        <TextBlock Text="{loc:Tr Rate_Title}" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}"/>
+                                        <TextBlock Text="{loc:Tr Rate_Subtitle}" FontSize="11" Foreground="{StaticResource BrushTextMuted}"/>
                                     </StackPanel>
                                     <Border HorizontalAlignment="Right" Background="#1E293B" CornerRadius="6" Padding="8,3" VerticalAlignment="Center">
-                                        <TextBlock x:Name="activeHzBadge" Text="2000 Hz" FontSize="11" FontWeight="Bold" Foreground="{StaticResource BrushAccent}"/>
+                                        <TextBlock x:Name="activeHzBadge" Text="{loc:Tr Rate_BadgeDefault}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource BrushAccent}"/>
                                     </Border>
                                 </Grid>
 
@@ -355,35 +356,35 @@
                                     <Button x:Name="btnRate0" Grid.Column="0" Style="{StaticResource RateButton}" Click="BtnRate_Click" Tag="0">
                                         <StackPanel HorizontalAlignment="Center">
                                             <TextBlock Text="125" FontSize="14" FontWeight="Black" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Hz" FontSize="9" Foreground="{StaticResource BrushTextMuted}" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Tr Unit_Hz}" FontSize="9" Foreground="{StaticResource BrushTextMuted}" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
 
                                     <Button x:Name="btnRate1" Grid.Column="2" Style="{StaticResource RateButton}" Click="BtnRate_Click" Tag="1">
                                         <StackPanel HorizontalAlignment="Center">
                                             <TextBlock Text="500" FontSize="14" FontWeight="Black" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Hz" FontSize="9" Foreground="{StaticResource BrushTextMuted}" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Tr Unit_Hz}" FontSize="9" Foreground="{StaticResource BrushTextMuted}" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
 
                                     <Button x:Name="btnRate2" Grid.Column="4" Style="{StaticResource RateButton}" Click="BtnRate_Click" Tag="2">
                                         <StackPanel HorizontalAlignment="Center">
                                             <TextBlock Text="1000" FontSize="14" FontWeight="Black" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Hz" FontSize="9" Foreground="{StaticResource BrushTextMuted}" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Tr Unit_Hz}" FontSize="9" Foreground="{StaticResource BrushTextMuted}" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
 
                                     <Button x:Name="btnRate3" Grid.Column="6" Style="{StaticResource RateButton}" Click="BtnRate_Click" Tag="3">
                                         <StackPanel HorizontalAlignment="Center">
                                             <TextBlock Text="2000" FontSize="14" FontWeight="Black" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Hz" FontSize="9" Foreground="{StaticResource BrushTextMuted}" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Tr Unit_Hz}" FontSize="9" Foreground="{StaticResource BrushTextMuted}" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
 
                                     <Button x:Name="btnRate4" Grid.Column="8" Style="{StaticResource RateButton}" Click="BtnRate_Click" Tag="4">
                                         <StackPanel HorizontalAlignment="Center">
                                             <TextBlock Text="4000" FontSize="14" FontWeight="Black" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Hz" FontSize="9" Foreground="{StaticResource BrushTextMuted}" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Tr Unit_Hz}" FontSize="9" Foreground="{StaticResource BrushTextMuted}" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
 
@@ -400,8 +401,8 @@
                         <!-- 4. Debounce & Power Management Card -->
                         <Border Background="{StaticResource BrushCardBg}" BorderBrush="{StaticResource BrushCardBorder}" BorderThickness="1" CornerRadius="12" Padding="16,12">
                             <StackPanel>
-                                <TextBlock Text="Debounce &amp; Power Management" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}"/>
-                                <TextBlock Text="Switch debounce timing and wireless auto-sleep behavior" FontSize="11" Foreground="{StaticResource BrushTextMuted}" Margin="0,0,0,10"/>
+                                <TextBlock Text="{loc:Tr Power_Title}" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}"/>
+                                <TextBlock Text="{loc:Tr Power_Subtitle}" FontSize="11" Foreground="{StaticResource BrushTextMuted}" Margin="0,0,0,10"/>
 
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -412,8 +413,8 @@
 
                                     <!-- Key Debounce -->
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Key Debounce (ms)" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
-                                        <TextBlock Text="Adjust click response debounce time" FontSize="10" Foreground="{StaticResource BrushTextMuted}" Margin="0,1,0,6"/>
+                                        <TextBlock Text="{loc:Tr Power_Debounce}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
+                                        <TextBlock Text="{loc:Tr Power_DebounceSub}" FontSize="10" Foreground="{StaticResource BrushTextMuted}" Margin="0,1,0,6"/>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -421,14 +422,14 @@
                                             </Grid.ColumnDefinitions>
                                             <Slider x:Name="sliderDebounce" Grid.Column="0" Minimum="1" Maximum="20" Value="8" SmallChange="1"
                                                     Style="{StaticResource CyberSlider}" ValueChanged="SliderDebounce_ValueChanged"/>
-                                            <TextBlock x:Name="txtDebounceVal" Grid.Column="1" Text="8ms" Width="38" FontWeight="Bold" FontFamily="Consolas, monospace" FontSize="12" Foreground="{StaticResource BrushAccent}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="txtDebounceVal" Grid.Column="1" Text="{loc:Tr Power_DebounceDefault}" Width="38" FontWeight="Bold" FontFamily="Consolas, monospace" FontSize="12" Foreground="{StaticResource BrushAccent}" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                         </Grid>
                                     </StackPanel>
 
                                     <!-- Sleep Timer -->
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Sleep Timer" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
-                                        <TextBlock Text="Auto-sleep on 2.4G wireless" FontSize="10" Foreground="{StaticResource BrushTextMuted}" Margin="0,1,0,6"/>
+                                        <TextBlock Text="{loc:Tr Power_Sleep}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
+                                        <TextBlock Text="{loc:Tr Power_SleepSub}" FontSize="10" Foreground="{StaticResource BrushTextMuted}" Margin="0,1,0,6"/>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -437,8 +438,8 @@
                                             </Grid.ColumnDefinitions>
                                             <Slider x:Name="sliderSleep" Grid.Column="0" Minimum="1" Maximum="60" Value="3" SmallChange="1"
                                                     Style="{StaticResource CyberSlider}" ValueChanged="SliderSleep_ValueChanged"/>
-                                            <TextBlock x:Name="txtSleepVal" Grid.Column="1" Text="3m" Width="32" FontWeight="Bold" FontFamily="Consolas, monospace" FontSize="12" Foreground="{StaticResource BrushAccent}" Margin="6,0,6,0" VerticalAlignment="Center"/>
-                                            <CheckBox x:Name="chkNeverSleep" Grid.Column="2" Content="Never" Foreground="{StaticResource BrushTextMuted}" FontSize="11" VerticalAlignment="Center" Click="ChkNeverSleep_Click"/>
+                                            <TextBlock x:Name="txtSleepVal" Grid.Column="1" Text="{loc:Tr Power_SleepDefault}" Width="32" FontWeight="Bold" FontFamily="Consolas, monospace" FontSize="12" Foreground="{StaticResource BrushAccent}" Margin="6,0,6,0" VerticalAlignment="Center"/>
+                                            <CheckBox x:Name="chkNeverSleep" Grid.Column="2" Content="{loc:Tr Power_Never}" Foreground="{StaticResource BrushTextMuted}" FontSize="11" VerticalAlignment="Center" Click="ChkNeverSleep_Click"/>
                                         </Grid>
                                     </StackPanel>
                                 </Grid>
@@ -455,11 +456,11 @@
                             <StackPanel>
                                 <Grid Margin="0,0,0,10">
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="DPI Stages &amp; Sensitivity" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}"/>
-                                        <TextBlock Text="Configure 1–6 stages (50 to 42,000 DPI)" FontSize="11" Foreground="{StaticResource BrushTextMuted}"/>
+                                        <TextBlock Text="{loc:Tr Dpi_Title}" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}"/>
+                                        <TextBlock Text="{loc:Tr Dpi_Subtitle}" FontSize="11" Foreground="{StaticResource BrushTextMuted}"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                        <TextBlock Text="Levels:" FontSize="11" Foreground="{StaticResource BrushTextMuted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{loc:Tr Dpi_Levels}" FontSize="11" Foreground="{StaticResource BrushTextMuted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                         <Border Background="#131B2E" BorderBrush="#25334D" BorderThickness="1" CornerRadius="8" Padding="2">
                                             <StackPanel Orientation="Horizontal">
                                                 <Button x:Name="btnLvl1" Content="1" Style="{StaticResource SegButton}" Click="BtnLevelCount_Click" Tag="1"/>
@@ -471,7 +472,7 @@
                                             </StackPanel>
                                         </Border>
                                         <Border Background="#1E293B" CornerRadius="6" Padding="8,3" Margin="8,0,0,0">
-                                            <TextBlock x:Name="activeDpiBadge" Text="Stage 1: 800 DPI" FontSize="11" FontWeight="Bold" Foreground="{StaticResource BrushAccent}"/>
+                                            <TextBlock x:Name="activeDpiBadge" Text="{loc:Tr Dpi_StageDefault}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource BrushAccent}"/>
                                         </Border>
                                     </StackPanel>
                                 </Grid>
@@ -483,7 +484,7 @@
 
                                 <!-- Save DPI Button -->
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <Button x:Name="btnSaveDpi" Content="Save DPI to Mouse" Click="BtnSaveDpi_Click"
+                                    <Button x:Name="btnSaveDpi" Content="{loc:Tr Dpi_Save}" Click="BtnSaveDpi_Click"
                                             Background="{StaticResource BrushPrimary}" Foreground="#FFFFFF" FontWeight="Bold" FontSize="12"
                                             Padding="16,6" Cursor="Hand" BorderThickness="0">
                                         <Button.Resources>
@@ -499,20 +500,20 @@
                         <!-- 2. Sensor & Motion Tuning Card -->
                         <Border Background="{StaticResource BrushCardBg}" BorderBrush="{StaticResource BrushCardBorder}" BorderThickness="1" CornerRadius="12" Padding="16,12">
                             <StackPanel>
-                                <TextBlock Text="Sensor &amp; Motion Tuning" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}"/>
-                                <TextBlock Text="LOD, Motion Sync, Ripple Control, and Angle Snapping" FontSize="11" Foreground="{StaticResource BrushTextMuted}" Margin="0,0,0,10"/>
+                                <TextBlock Text="{loc:Tr Sensor_Title}" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}"/>
+                                <TextBlock Text="{loc:Tr Sensor_Subtitle}" FontSize="11" Foreground="{StaticResource BrushTextMuted}" Margin="0,0,0,10"/>
 
                                 <!-- Lift-Off Distance (LOD) with Spaced Buttons -->
                                 <Grid Margin="0,0,0,10">
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Lift-Off Distance (LOD)" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
-                                        <TextBlock Text="Sensor tracking cutoff height" FontSize="10" Foreground="{StaticResource BrushTextMuted}"/>
+                                        <TextBlock Text="{loc:Tr Sensor_Lod}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
+                                        <TextBlock Text="{loc:Tr Sensor_LodSub}" FontSize="10" Foreground="{StaticResource BrushTextMuted}"/>
                                     </StackPanel>
                                     <Border HorizontalAlignment="Right" Background="#120B24" BorderBrush="#2E1A5E" BorderThickness="1" CornerRadius="8" Padding="3">
                                         <StackPanel Orientation="Horizontal">
-                                            <Button x:Name="btnLod0" Content="0.7 mm" Style="{StaticResource SegButton}" Click="BtnLod_Click" Tag="0" MinWidth="68" Padding="14,6" Margin="0,0,6,0"/>
-                                            <Button x:Name="btnLod1" Content="1.0 mm" Style="{StaticResource SegButton}" Click="BtnLod_Click" Tag="1" MinWidth="68" Padding="14,6" Margin="0,0,6,0" Background="{StaticResource BrushAccent}" Foreground="#000000"/>
-                                            <Button x:Name="btnLod2" Content="2.0 mm" Style="{StaticResource SegButton}" Click="BtnLod_Click" Tag="2" MinWidth="68" Padding="14,6"/>
+                                            <Button x:Name="btnLod0" Content="{loc:Tr Sensor_Lod07}" Style="{StaticResource SegButton}" Click="BtnLod_Click" Tag="0" MinWidth="68" Padding="14,6" Margin="0,0,6,0"/>
+                                            <Button x:Name="btnLod1" Content="{loc:Tr Sensor_Lod10}" Style="{StaticResource SegButton}" Click="BtnLod_Click" Tag="1" MinWidth="68" Padding="14,6" Margin="0,0,6,0" Background="{StaticResource BrushAccent}" Foreground="#000000"/>
+                                            <Button x:Name="btnLod2" Content="{loc:Tr Sensor_Lod20}" Style="{StaticResource SegButton}" Click="BtnLod_Click" Tag="2" MinWidth="68" Padding="14,6"/>
                                         </StackPanel>
                                     </Border>
                                 </Grid>
@@ -522,8 +523,8 @@
                                 <!-- Motion Sync -->
                                 <Grid Margin="0,0,0,10">
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Motion Sync" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
-                                        <TextBlock Text="Synchronizes sensor frames with USB polling intervals" FontSize="10" Foreground="{StaticResource BrushTextMuted}"/>
+                                        <TextBlock Text="{loc:Tr Sensor_MotionSync}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
+                                        <TextBlock Text="{loc:Tr Sensor_MotionSyncSub}" FontSize="10" Foreground="{StaticResource BrushTextMuted}"/>
                                     </StackPanel>
                                     <CheckBox x:Name="toggleMotionSync" Style="{StaticResource CyberToggleSwitch}" HorizontalAlignment="Right" Click="SensorToggle_Changed"/>
                                 </Grid>
@@ -533,8 +534,8 @@
                                 <!-- Ripple Control -->
                                 <Grid Margin="0,0,0,10">
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Ripple Control" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
-                                        <TextBlock Text="High-speed jitter smoothing algorithm" FontSize="10" Foreground="{StaticResource BrushTextMuted}"/>
+                                        <TextBlock Text="{loc:Tr Sensor_Ripple}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
+                                        <TextBlock Text="{loc:Tr Sensor_RippleSub}" FontSize="10" Foreground="{StaticResource BrushTextMuted}"/>
                                     </StackPanel>
                                     <CheckBox x:Name="toggleRipple" Style="{StaticResource CyberToggleSwitch}" HorizontalAlignment="Right" Click="SensorToggle_Changed"/>
                                 </Grid>
@@ -544,8 +545,8 @@
                                 <!-- Angle Snapping -->
                                 <Grid Margin="0,0,0,10">
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Angle Snapping" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
-                                        <TextBlock Text="Linear horizontal and vertical path correction" FontSize="10" Foreground="{StaticResource BrushTextMuted}"/>
+                                        <TextBlock Text="{loc:Tr Sensor_Angle}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
+                                        <TextBlock Text="{loc:Tr Sensor_AngleSub}" FontSize="10" Foreground="{StaticResource BrushTextMuted}"/>
                                     </StackPanel>
                                     <CheckBox x:Name="toggleAngleSnap" Style="{StaticResource CyberToggleSwitch}" HorizontalAlignment="Right" Click="SensorToggle_Changed"/>
                                 </Grid>
@@ -555,14 +556,14 @@
                                 <!-- Sensor Angle (Rotate) -->
                                 <Grid Margin="0,0,0,2">
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Rotate (Sensor Angle)" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
-                                        <TextBlock Text="Compensates for tilted mouse grip angle (-30° to +30°)" FontSize="10" Foreground="{StaticResource BrushTextMuted}"/>
+                                        <TextBlock Text="{loc:Tr Sensor_Rotate}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource BrushText}"/>
+                                        <TextBlock Text="{loc:Tr Sensor_RotateSub}" FontSize="10" Foreground="{StaticResource BrushTextMuted}"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                         <Slider x:Name="sliderRotate" Width="110" Minimum="-30" Maximum="30" SmallChange="1" LargeChange="5" Value="0"
                                                 Style="{StaticResource CyberSlider}" ValueChanged="SliderRotate_ValueChanged" Margin="0,0,8,0"/>
-                                        <TextBlock x:Name="txtRotateVal" Text="0°" Width="35" FontWeight="Bold" FontFamily="Consolas, monospace" FontSize="12" Foreground="{StaticResource BrushAccent}" VerticalAlignment="Center"/>
-                                        <Button Content="0° Reset" Click="BtnResetRotate_Click" Background="#1E293B" Foreground="#94A3B8" BorderThickness="0"
+                                        <TextBlock x:Name="txtRotateVal" Text="{loc:Tr Sensor_RotateDefault}" Width="35" FontWeight="Bold" FontFamily="Consolas, monospace" FontSize="12" Foreground="{StaticResource BrushAccent}" VerticalAlignment="Center"/>
+                                        <Button Content="{loc:Tr Sensor_RotateReset}" Click="BtnResetRotate_Click" Background="#1E293B" Foreground="#94A3B8" BorderThickness="0"
                                                 FontSize="10" Padding="8,3" Cursor="Hand">
                                             <Button.Resources>
                                                 <Style TargetType="Border">
@@ -585,10 +586,10 @@
                     <StackPanel>
                         <Grid Margin="0,0,0,8">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Hardware Packet Monitor" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}" Margin="0,0,10,0"/>
-                                <TextBlock Text="Direct USB HID Feature and Input Report capture" FontSize="11" Foreground="{StaticResource BrushTextMuted}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Tr Log_Title}" FontSize="14" FontWeight="Bold" Foreground="{StaticResource BrushText}" Margin="0,0,10,0"/>
+                                <TextBlock Text="{loc:Tr Log_Subtitle}" FontSize="11" Foreground="{StaticResource BrushTextMuted}" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <Button Content="Clear Log" Click="BtnClearLog_Click" Background="#2E1A5E" Foreground="{StaticResource BrushTextMuted}" BorderThickness="0"
+                            <Button Content="{loc:Tr Log_Clear}" Click="BtnClearLog_Click" Background="#2E1A5E" Foreground="{StaticResource BrushTextMuted}" BorderThickness="0"
                                     FontSize="11" Padding="12,4" HorizontalAlignment="Right" Cursor="Hand">
                                 <Button.Resources>
                                     <Style TargetType="Border">

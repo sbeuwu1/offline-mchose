@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using MchoseHub.Localization;
 
 namespace MchoseHub.Models
 {
@@ -202,7 +203,7 @@ namespace MchoseHub.Models
         }
 
         public int ActiveDpiValue => (ActiveDpiIndex >= 0 && ActiveDpiIndex < DpiStages.Length) ? DpiStages[ActiveDpiIndex] : 800;
-        public string ActiveDpiText => $"Stage {ActiveDpiIndex + 1}: {ActiveDpiValue} DPI";
+        public string ActiveDpiText => Loc.F("Dpi_StageFmt", ActiveDpiIndex + 1, ActiveDpiValue);
 
         public event PropertyChangedEventHandler? PropertyChanged;
 

@@ -14,6 +14,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using MchoseHub.Hardware;
+using MchoseHub.Localization;
 using MchoseHub.Models;
 
 namespace MchoseHub
@@ -375,7 +376,7 @@ namespace MchoseHub
 
                 if (!connected || _hid.CurrentDevice == null)
                 {
-                    ApplyDisconnectedState("Disconnected");
+                    ApplyDisconnectedState(Loc.T("Status_Disconnected"));
                     App.DebugLog("TryConnectAsync: No matching device found.");
                     return;
                 }
@@ -432,7 +433,7 @@ namespace MchoseHub
                 {
                     _lastConnectFailureUtc = DateTime.UtcNow;
                     _hid.Disconnect();
-                    ApplyDisconnectedState("Mouse not responding");
+                    ApplyDisconnectedState(Loc.T("Status_NotResponding"));
                     Log("Mouse detected, but none of its configuration links answered. Check whether the mouse is in wired or 2.4G mode.", LogType.Warn);
                     App.DebugLog("TryConnectAsync: no live configuration link.");
                 }
@@ -463,7 +464,7 @@ namespace MchoseHub
 
             statusDot.Fill = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81)); // Green
             statusText.Text = _state.ProductName;
-            btnConnect.Content = "Disconnect";
+            btnConnect.Content = Loc.T("Btn_Disconnect");
             btnConnect.Background = new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55));
 
             heroDeviceName.Text = _state.ProductName;
@@ -492,7 +493,7 @@ namespace MchoseHub
             statusDot.Fill = new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44)); // Red
             statusText.Text = status;
             batteryBadge.Visibility = Visibility.Collapsed;
-            btnConnect.Content = "Connect Mouse";
+            btnConnect.Content = Loc.T("Btn_Connect");
             btnConnect.Background = (SolidColorBrush)FindResource("BrushPrimary");
             heroBatteryText.Text = "--%";
             heroBatteryFill.Width = 0;
@@ -506,7 +507,7 @@ namespace MchoseHub
                 // Respect the user's choice: don't let the watchdog reconnect immediately.
                 _autoConnectSuspended = true;
                 _hid.Disconnect();
-                ApplyDisconnectedState("Disconnected");
+                ApplyDisconnectedState(Loc.T("Status_Disconnected"));
                 Log("Mouse disconnected by user.", LogType.Info);
             }
             else
@@ -544,15 +545,15 @@ namespace MchoseHub
 
                 // Rotation
                 sliderRotate.Value = _state.RotateVal;
-                txtRotateVal.Text = $"{_state.RotateVal}°";
+                txtRotateVal.Text = Loc.F("Sensor_RotateFmt", _state.RotateVal);
 
                 // Debounce
                 sliderDebounce.Value = _state.DebounceMs;
-                txtDebounceVal.Text = $"{_state.DebounceMs}ms";
+                txtDebounceVal.Text = Loc.F("Power_DebounceValueFmt", _state.DebounceMs);
 
                 // Sleep
                 sliderSleep.Value = _state.SleepMinutes;
-                txtSleepVal.Text = $"{_state.SleepMinutes}m";
+                txtSleepVal.Text = Loc.F("Power_SleepValueFmt", _state.SleepMinutes);
                 chkNeverSleep.IsChecked = _state.NeverSleep;
 
                 // DPI Stages
@@ -624,7 +625,7 @@ namespace MchoseHub
             {
                 if (_shutdownStarted) return;
 
-                ApplyDisconnectedState("Device unplugged");
+                ApplyDisconnectedState(Loc.T("Status_DeviceUnplugged"));
                 Log("Mouse disconnected (device removed).", LogType.Warn);
 
                 // Probe again shortly in case the dongle re-enumerates.
@@ -660,7 +661,7 @@ namespace MchoseHub
                 if (!_hid.IsCurrentDevicePresent())
                 {
                     _hid.Disconnect();
-                    ApplyDisconnectedState("Device unplugged");
+                    ApplyDisconnectedState(Loc.T("Status_DeviceUnplugged"));
                     Log("Mouse disconnected (device removed).", LogType.Warn);
                     return;
                 }
@@ -697,7 +698,7 @@ namespace MchoseHub
             _lastLinkRebuildUtc = DateTime.UtcNow;
             App.DebugLog("Connected link stopped answering; re-probing configuration interfaces...");
             _hid.Disconnect();
-            ApplyDisconnectedState("Reconnecting...");
+            ApplyDisconnectedState(Loc.T("Status_Reconnecting"));
         }
 
         private void SetModeButtonStyles(int mode)
@@ -725,16 +726,16 @@ namespace MchoseHub
 
             activeModeBadge.Text = mode switch
             {
-                1 => "Performance",
-                3 => "Extreme Mode",
-                _ => "Gaming Mode"
+                1 => Loc.T("Mode_Performance"),
+                3 => Loc.T("Mode_Extreme"),
+                _ => Loc.T("Mode_Gaming")
             };
 
             modeDescText.Text = mode switch
             {
-                1 => "Eco / Balanced: Extends battery life for productivity.",
-                3 => "Extreme Mode: Maximum responsiveness, tightest frame timing.",
-                _ => "Gaming Mode: Faster response, optimal for fast-paced gaming."
+                1 => Loc.T("Mode_Desc_Performance"),
+                3 => Loc.T("Mode_Desc_Extreme"),
+                _ => Loc.T("Mode_Desc_Gaming")
             };
         }
 
@@ -761,7 +762,7 @@ namespace MchoseHub
                 }
             }
 
-            activeHzBadge.Text = $"{_state.ActiveHz} Hz";
+            activeHzBadge.Text = Loc.F("Rate_ValueFmt", _state.ActiveHz);
         }
 
         private void SetLevelButtonStyles(int count)
@@ -855,7 +856,7 @@ namespace MchoseHub
                 // Stage Name
                 var lbl = new TextBlock
                 {
-                    Text = $"Stage {stageIndex + 1}",
+                    Text = Loc.F("Dpi_StageName", stageIndex + 1),
                     FontWeight = FontWeights.Bold,
                     FontSize = 13,
                     Foreground = (SolidColorBrush)FindResource("BrushText"),
@@ -1000,7 +1001,7 @@ namespace MchoseHub
 
             int rot = (int)Math.Round(sliderRotate.Value);
             _state.RotateVal = rot;
-            txtRotateVal.Text = $"{rot}°";
+            txtRotateVal.Text = Loc.F("Sensor_RotateFmt", rot);
 
             ScheduleSensor();
         }
@@ -1013,7 +1014,7 @@ namespace MchoseHub
             {
                 if (sliderRotate != null) sliderRotate.Value = 0;
                 _state.RotateVal = 0;
-                if (txtRotateVal != null) txtRotateVal.Text = "0°";
+                if (txtRotateVal != null) txtRotateVal.Text = Loc.T("Sensor_RotateDefault");
             }
             finally
             {
@@ -1028,7 +1029,7 @@ namespace MchoseHub
 
             int ms = (int)Math.Round(sliderDebounce.Value);
             _state.DebounceMs = ms;
-            txtDebounceVal.Text = $"{ms}ms";
+            txtDebounceVal.Text = Loc.F("Power_DebounceValueFmt", ms);
 
             _debounceTimer.Stop();
             _debounceTimer.Start();
@@ -1040,7 +1041,7 @@ namespace MchoseHub
 
             int min = (int)Math.Round(sliderSleep.Value);
             _state.SleepMinutes = min;
-            txtSleepVal.Text = $"{min}m";
+            txtSleepVal.Text = Loc.F("Power_SleepValueFmt", min);
 
             _sleepDebounceTimer.Stop();
             _sleepDebounceTimer.Start();
