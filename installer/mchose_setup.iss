@@ -6,8 +6,8 @@
 #endif
 
 #define MyAppName "Offline Mchose"
-#define MyAppPublisher "rapou7"
-#define MyAppURL "https://github.com/Rapou7/mchose-drivers-offline"
+#define MyAppPublisher "sbeuwu1 (community fork of rapou7)"
+#define MyAppURL "https://github.com/sbeuwu1/offline-mchose"
 #define MyAppExeName "MchoseHub.exe"
 
 [Setup]
@@ -38,6 +38,7 @@ RestartApplications=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked

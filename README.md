@@ -4,7 +4,7 @@
 
 # Offline Mchose
 
-[![Build and Release](https://github.com/Rapou7/mchose-drivers-offline/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/Rapou7/mchose-drivers-offline/actions/workflows/build-and-release.yml)
+[![Build and Release](https://github.com/sbeuwu1/offline-mchose/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/sbeuwu1/offline-mchose/actions/workflows/build-and-release.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-blue.svg)](https://www.microsoft.com/windows)
 
@@ -17,6 +17,9 @@
 > **Offline Mchose** is an independent, unofficial community project created by **rapou7**. It is **NOT** affiliated with, authorized, maintained, sponsored, or endorsed by **Shenzhen ZhiHaihe Technology Co., Ltd. (深圳市智海和科技有限公司)**, **MCHOSE**, or any of their affiliates or subsidiaries.  
 > 
 > All product names, logos, brands, trademarks, and registered trademarks belong to their respective holders. Use of them does not imply any affiliation with or endorsement by them. This utility is provided strictly "as-is" without warranty.
+
+> [!NOTE]
+> **Community fork:** this repository is a fork of [Rapou7/offline-mchose](https://github.com/Rapou7/offline-mchose) maintained by **sbeuwu1**. It keeps the original GPLv3 license and adds stability fixes, hot-plug/battery handling with automatic wired ↔ 2.4G dongle switching, and an English/Russian interface. All credit for the original application and protocol research goes to **rapou7**.
 
 ---
 
@@ -80,10 +83,10 @@ Detailed reverse-engineered HID packet formats, register maps, and checksum spec
 ## Download & Installation
 
 ### Option 1: Windows Installer (Recommended)
-Download the latest `MchoseHub-Setup-v*.exe` from the [Releases](https://github.com/Rapou7/mchose-drivers-offline/releases) page.
+Download the latest `MchoseHub-Setup-v*.exe` from the [Releases](https://github.com/sbeuwu1/offline-mchose/releases) page.
 
 ### Option 2: Portable Executable
-Download `MchoseHub-Portable-v*.exe` from [Releases](https://github.com/Rapou7/mchose-drivers-offline/releases). Single-file executable that requires no installation.
+Download `MchoseHub-Portable-v*.exe` from [Releases](https://github.com/sbeuwu1/offline-mchose/releases). Single-file executable that requires no installation.
 
 ---
 
@@ -98,8 +101,8 @@ Download `MchoseHub-Portable-v*.exe` from [Releases](https://github.com/Rapou7/m
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Rapou7/mchose-drivers-offline.git
-   cd mchose-drivers-offline
+   git clone https://github.com/sbeuwu1/offline-mchose.git
+   cd offline-mchose
    ```
 
 2. **Publish Portable Executable:**
